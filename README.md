@@ -15,9 +15,9 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
 
 ## Aperçu
 
-| Temps réel | Import / Historique |
-|---|---|
-| Jauge SPL, voyants FAST/SLOW, MAX, pondération A/C, seuils d'alarme, graphique et tableau en direct | Lecture de la mémoire de l'appareil, courbe d'analyse, export Excel/CSV |
+| Temps réel | Maison | Import / Historique |
+|---|---|---|
+| Jauge SPL, voyants FAST/SLOW, MAX, pondération A/C, seuils d'alarme, graphique et tableau en direct | Météo de la maison : baromètre 4 zones, LAeq 1 s / 1 min, dosimètre zone rouge, L10/L50/L90 et conseils bienveillants | Lecture de la mémoire de l'appareil, courbe d'analyse, export Excel/CSV |
 
 - Interface web moderne (dark/light) affichée dans une **fenêtre native**
   (pywebview / WebView2) — ou dans un simple navigateur.
@@ -27,7 +27,9 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
 - **Export / import** : XLSX, CSV et `.xls` hérités (compatible avec les fichiers
   produits par l'ancien logiciel).
 - **Réglages appareil** : gamme de mesure (5 plages), FAST/SLOW, A/C, MAX.
-- **Statistiques** : minimum, maximum, moyenne, Leq.
+- **Statistiques** : minimum, maximum, moyenne, Leq, percentiles L10 / L50 / L90.
+- **Vue Maison** : ambiance du moment, baromètre sonore (LAeq 1 s / 1 min, 4 zones),
+  temps passé au-dessus de 75 dB dans la journée et conseil familial contextuel.
 - Fonctionne **sans matériel** grâce à un simulateur intégré.
 
 ## Installation (développement)

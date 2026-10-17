@@ -8,6 +8,7 @@ const I18N = {
   fr: {
     "app.tagline": "Sonomètre — acquisition & analyse",
     "tab.live": "Temps réel",
+    "tab.home": "Maison",
     "tab.import": "Import / Historique",
     "status.connecting": "Connexion…",
     "status.online": "Sonomètre connecté",
@@ -37,6 +38,30 @@ const I18N = {
     "stats.max": "Maximum",
     "stats.leq": "Leq",
     "chart.live": "Évolution du niveau",
+    "chart.home": "Météo de la maison",
+    "home.redzone": "Zone rouge",
+    "home.mood": "Ambiance du moment",
+    "home.baro": "Baromètre sonore",
+    "home.session": "Session en cours",
+    "home.coach": "Conseil du moment",
+    "home.dose": "Temps en zone rouge (> 75 dB) aujourd'hui",
+    "home.l10": "L10 · pics",
+    "home.l50": "L50 · médiane",
+    "home.l90": "L90 · fond",
+    "home.leeq": "LAeq · total",
+    "home.zone0": "Sereine",
+    "home.zone1": "Vie de famille active",
+    "home.zone2": "Animée — vigilance douce",
+    "home.zone3": "Pic de bruit",
+    "home.moodsub": "LAeq 1 min : {v} dB",
+    "home.wait": "Lancez la mesure pour révéler la météo de la maison.",
+    "home.dosemin": "{n} min",
+    "home.dosesec": "{n} s",
+    "coach.background": "Le bruit de fond (L90 à {v} dB) est un peu élevé. Pensez à éteindre les écrans ou les bruits parasites en arrière-plan.",
+    "coach.peaks": "Beaucoup d'énergie dépensée (pics à {v} dB) : c'est le bon moment pour un temps calme — Legos, lecture, dessin.",
+    "coach.red": "Zone rouge depuis {n} min aujourd'hui : proposez une activité posée pour faire redescendre la pression, en douceur.",
+    "coach.calm": "Ambiance sereine, belle dynamique familiale. Profitez-en !",
+    "coach.steady": "Niveau stable et confortable. La maison respire.",
     "chart.level": "Niveau",
     "chart.import": "Analyse des données",
     "table.measures": "Mesures",
@@ -73,6 +98,7 @@ const I18N = {
   en: {
     "app.tagline": "Sound level meter — acquisition & analysis",
     "tab.live": "Real time",
+    "tab.home": "Home",
     "tab.import": "Import / History",
     "status.connecting": "Connecting…",
     "status.online": "Meter connected",
@@ -102,6 +128,30 @@ const I18N = {
     "stats.max": "Maximum",
     "stats.leq": "Leq",
     "chart.live": "Level over time",
+    "chart.home": "Home weather",
+    "home.redzone": "Red zone",
+    "home.mood": "Current mood",
+    "home.baro": "Sound barometer",
+    "home.session": "Current session",
+    "home.coach": "Tip of the moment",
+    "home.dose": "Time in red zone (> 75 dB) today",
+    "home.l10": "L10 · peaks",
+    "home.l50": "L50 · median",
+    "home.l90": "L90 · background",
+    "home.leeq": "LAeq · total",
+    "home.zone0": "Serene",
+    "home.zone1": "Active family life",
+    "home.zone2": "Lively — gentle watch",
+    "home.zone3": "Noise peak",
+    "home.moodsub": "LAeq 1 min: {v} dB",
+    "home.wait": "Start measuring to reveal the home weather.",
+    "home.dosemin": "{n} min",
+    "home.dosesec": "{n} s",
+    "coach.background": "Background noise (L90 at {v} dB) is a bit high. Consider switching off screens or background hum.",
+    "coach.peaks": "Lots of energy spent (peaks at {v} dB): a good time for quiet play — Lego, reading, drawing.",
+    "coach.red": "Red zone for {n} min today: suggest a calm activity to gently bring the pressure down.",
+    "coach.calm": "Serene mood, lovely family dynamics. Enjoy it!",
+    "coach.steady": "Stable, comfortable level. The house is breathing.",
     "chart.level": "Level",
     "chart.import": "Data analysis",
     "table.measures": "Measurements",
@@ -177,7 +227,7 @@ const chartTheme = () => (document.documentElement.dataset.theme === "dark" ? {
   text: "#8b949e", axis: "rgba(255,255,255,.09)", split: "rgba(255,255,255,.05)",
 } : { text: "#64748b", axis: "rgba(15,23,42,.12)", split: "rgba(15,23,42,.06)" });
 
-let liveChart, importChart;
+let liveChart, importChart, homeChart;
 
 function baseOption(name, extra = {}) {
   const th = chartTheme();
@@ -210,9 +260,13 @@ const lineSeries = (data, color = "#2dd4a7", marks = []) => ({
 function initCharts() {
   liveChart = echarts.init(el("live-chart"), null, { renderer: "canvas" });
   importChart = echarts.init(el("import-chart"), null, { renderer: "canvas" });
+  homeChart = echarts.init(el("home-chart"), null, { renderer: "canvas" });
   liveChart.setOption(baseOption(""));
   importChart.setOption(baseOption(""));
-  window.addEventListener("resize", () => { liveChart.resize(); importChart.resize(); });
+  homeChart.setOption(baseOption(""));
+  window.addEventListener("resize", () => {
+    liveChart.resize(); importChart.resize(); if (homeChart) homeChart.resize();
+  });
 }
 
 function hexToRgba(hex, a) {
@@ -360,6 +414,176 @@ function renderImportMeta() {
 }
 
 /* ==========================================================================
+   Maison — family lifestyle dashboard ("météo de la maison")
+   ========================================================================== */
+const HOME_LO = 30, HOME_HI = 90, HOME_RED = 75;
+const HOME_ZONES = [
+  { to: 55, color: "#2dd4a7" },
+  { to: 65, color: "#f5b544" },
+  { to: 75, color: "#fb923c" },
+  { to: 90, color: "#f87171" },
+];
+const zoneOf = (v) => (v < 55 ? 0 : v < 65 ? 1 : v < 75 ? 2 : 3);
+
+const dose = (() => {
+  const key = "bitan-sono-redday";
+  const today = () => new Date().toISOString().slice(0, 10);
+  let data = { date: today(), sec: 0 };
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || "null");
+    if (raw && raw.date === today() && typeof raw.sec === "number") data = raw;
+  } catch (_) {}
+  return {
+    add(sec) {
+      if (today() !== data.date) data = { date: today(), sec: 0 };
+      data.sec += sec;
+      try { localStorage.setItem(key, JSON.stringify(data)); } catch (_) {}
+    },
+    get seconds() {
+      if (today() !== data.date) return 0;
+      return data.sec;
+    },
+  };
+})();
+
+function homePoint(frac, r) {
+  const angle = Math.PI * (1 - Math.min(1, Math.max(0, frac)));
+  return [110 + r * Math.cos(angle), 118 - r * Math.sin(angle)];
+}
+
+function buildHomeGauge() {
+  const zones = el("home-zones");
+  if (!zones) return;
+  zones.innerHTML = "";
+  let from = HOME_LO;
+  HOME_ZONES.forEach((zone, i) => {
+    const [x0, y0] = homePoint((from - HOME_LO) / (HOME_HI - HOME_LO), 90);
+    const [x1, y1] = homePoint((zone.to - HOME_LO) / (HOME_HI - HOME_LO), 90);
+    const ends = (i === 0 || i === HOME_ZONES.length - 1) ? " zseg-ends" : "";
+    zones.insertAdjacentHTML("beforeend",
+      `<path class="zseg${ends}" d="M${x0.toFixed(1)} ${y0.toFixed(1)} ` +
+      `A90 90 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${zone.color}" />`);
+    from = zone.to;
+  });
+  const ticks = el("home-ticks");
+  ticks.innerHTML = "";
+  for (let v = HOME_LO; v <= HOME_HI; v += 10) {
+    const [x1, y1] = homePoint((v - HOME_LO) / (HOME_HI - HOME_LO), 97);
+    const [x2, y2] = homePoint((v - HOME_LO) / (HOME_HI - HOME_LO), 104);
+    ticks.insertAdjacentHTML("beforeend",
+      `<line class="ztick" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" ` +
+      `x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"></line>`);
+  }
+  // Boundary labels sit exactly on the zone limits (no separate scale row).
+  const labels = [[HOME_LO, 12, 133], [55, 81, 8], [65, 139, 8], [75, 190, 37], [HOME_HI, 208, 133]];
+  for (const [value, x, y] of labels) {
+    ticks.insertAdjacentHTML("beforeend",
+      `<text class="zlabel" x="${x}" y="${y}">${value}</text>`);
+  }
+}
+
+function leqWindow(ms, fallback) {
+  const now = Date.now();
+  const values = state.live.filter((r) => r._t && now - r._t <= ms).map((r) => Number(r.value));
+  const use = values.length ? values : (fallback === undefined || fallback === null ? [] : [fallback]);
+  if (!use.length) return null;
+  const power = use.reduce((a, v) => a + Math.pow(10, v / 10), 0) / use.length;
+  return 10 * Math.log10(power);
+}
+
+function renderHome() {
+  if (!el("view-home")) return;
+  const fmt = (v) => (v === undefined || v === null ? "–" : Number(v).toFixed(1));
+  const last = state.live.length ? state.live[state.live.length - 1] : null;
+  const lastValue = last ? Number(last.value) : null;
+
+  const v1 = leqWindow(1500, lastValue);
+  const v60 = leqWindow(60000, lastValue);
+  el("home-laeq1s").textContent = fmt(v1);
+  el("home-laeq1m").textContent = fmt(v60);
+
+  // Mood of the moment, driven by the 1-minute energy average.
+  const ref = v60 ?? v1;
+  const moodLabel = el("mood-label"), moodSub = el("mood-sub"), moodDot = el("mood-dot");
+  if (ref === null || ref === undefined) {
+    moodLabel.textContent = "–";
+    moodSub.textContent = t("home.wait");
+    moodDot.style.background = "var(--text-muted)";
+  } else {
+    const zone = zoneOf(ref);
+    moodLabel.textContent = t("home.zone" + zone);
+    moodSub.textContent = t("home.moodsub", { v: ref.toFixed(1) });
+    moodDot.style.background = HOME_ZONES[zone].color;
+    moodDot.style.boxShadow = `0 0 0 5px ${HOME_ZONES[zone].color}33`;
+  }
+
+  // Needle follows the latest value on the 30–90 dB barometer.
+  const needle = el("home-needle");
+  if (needle && lastValue !== null) {
+    const frac = (Math.min(HOME_HI, Math.max(HOME_LO, lastValue)) - HOME_LO) / (HOME_HI - HOME_LO);
+    const [x2, y2] = homePoint(frac, 76);
+    needle.setAttribute("x2", x2.toFixed(1));
+    needle.setAttribute("y2", y2.toFixed(1));
+  }
+
+  // Session percentiles.
+  const s = state.liveStats || {};
+  el("hm-l10").textContent = fmt(s.l10);
+  el("hm-l50").textContent = fmt(s.l50);
+  el("hm-l90").textContent = fmt(s.l90);
+  el("hm-leq").textContent = fmt(s.leq);
+  el("home-count-label").textContent =
+    `${s.count || state.live.length} ${lang === "fr" ? "mesures" : "measurements"}`;
+
+  // Dosimeter: time spent above 75 dB today.
+  const sec = Math.round(dose.seconds);
+  el("home-dose").textContent = sec >= 90
+    ? t("home.dosemin", { n: Math.round(sec / 60) })
+    : t("home.dosesec", { n: sec });
+
+  // Benevolent coaching, most specific rule first.
+  const coachText = el("coach-text"), coachDot = el("coach-dot");
+  let key = null, vars = {}, color = "var(--text-muted)";
+  const l10 = s.l10, l90 = s.l90;
+  if (s.count && l10 !== undefined && l90 !== undefined) {
+    if (sec >= 600) { key = "coach.red"; vars = { n: Math.round(sec / 60) }; color = "#f87171"; }
+    else if (l90 > 55) { key = "coach.background"; vars = { v: Number(l90).toFixed(1) }; color = "#f5b544"; }
+    else if (l10 - l90 > 20) { key = "coach.peaks"; vars = { v: Number(l10).toFixed(1) }; color = "#fb923c"; }
+    else if (l10 < 55) { key = "coach.calm"; color = "#2dd4a7"; }
+    else { key = "coach.steady"; color = "#2dd4a7"; }
+  } else {
+    key = "home.wait";
+  }
+  coachText.textContent = t(key, vars);
+  coachDot.style.background = color;
+
+  renderHomeChart();
+}
+
+function renderHomeChart() {
+  if (!homeChart) return;
+  const th = chartTheme();
+  const data = state.live.slice(-MAX_POINTS);
+  homeChart.setOption({
+    xAxis: { data: data.map((r) => r.no), axisLabel: { color: th.text } },
+    yAxis: { axisLabel: { color: th.text } },
+    series: [{
+      type: "line", data: data.map((r) => r.value), showSymbol: false, smooth: .18,
+      lineStyle: { width: 2, color: "#38bdf8" }, itemStyle: { color: "#38bdf8" },
+      areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: "rgba(56,189,248,.28)" },
+        { offset: 1, color: "rgba(56,189,248,0)" }]) },
+      markArea: { silent: true, itemStyle: { color: "rgba(248,113,113,.13)" },
+        data: [[{ yAxis: HOME_RED }, { yAxis: HOME_HI }]] },
+      markLine: { silent: true, symbol: "none",
+        data: [{ yAxis: HOME_RED, lineStyle: { color: "#f87171", type: "dashed" },
+          label: { formatter: String(HOME_RED), color: "#f87171", fontSize: 10,
+            position: "insideEndTop" } }] },
+    }],
+  }, { replaceMerge: ["series"] });
+}
+
+/* ==========================================================================
    WebSocket
    ========================================================================== */
 let socket, reconnectTimer, pendingHistory = false;
@@ -390,6 +614,10 @@ function handle(msg) {
       state.simulated = msg.simulated;
       state.liveRunning = msg.live_running;
       state.live = msg.live_tail || [];
+      // Backfill arrival timestamps so the LAeq windows work after a reload.
+      const now = Date.now();
+      const step = Math.max(200, Number((msg.settings || {}).interval || 1) * 1000);
+      state.live.forEach((r, i) => { r._t = now - (state.live.length - 1 - i) * step; });
       state.imported = msg.import_records || [];
       state.liveStats = msg.live_stats || {};
       applySettingsToUi();
@@ -470,24 +698,41 @@ function handle(msg) {
   }
 }
 
+function percentileAsc(sorted, q) {
+  if (!sorted.length) return null;
+  const rank = (sorted.length - 1) * (q / 100);
+  const lo = Math.floor(rank), frac = rank - lo;
+  return lo + 1 >= sorted.length ? sorted[lo] : sorted[lo] + frac * (sorted[lo + 1] - sorted[lo]);
+}
+
 function computeStats(records) {
   if (!records.length) return {};
   const values = records.map((r) => Number(r.value));
   const power = values.reduce((a, v) => a + Math.pow(10, v / 10), 0) / values.length;
+  const sorted = [...values].sort((a, b) => a - b);
   return {
     count: values.length,
     min: Math.min(...values), max: Math.max(...values),
     avg: values.reduce((a, v) => a + v, 0) / values.length,
     leq: 10 * Math.log10(power),
+    l10: percentileAsc(sorted, 90),
+    l50: percentileAsc(sorted, 50),
+    l90: percentileAsc(sorted, 10),
   };
 }
 
 function onMeasurement(record, stats, count) {
+  record._t = Date.now();
   state.live.push(record);
   if (state.live.length > MAX_POINTS + 200) state.live = state.live.slice(-MAX_POINTS);
   state.liveStats = stats || computeStats(state.live);
   state.lastValue = record.value;
   state.haveMeasurement = true;
+
+  // Red-zone dosimeter: accumulate the sampling interval while measuring.
+  if (state.liveRunning && Number(record.value) > HOME_RED) {
+    dose.add(Math.max(0.2, Number(state.settings.interval) || 1));
+  }
 
   const value = el("live-value");
   value.classList.remove("placeholder");
@@ -502,6 +747,7 @@ function onMeasurement(record, stats, count) {
   appendLiveRow(record);
   renderLiveChart();
   renderStats();
+  renderHome();
   checkAlarm(record);
 }
 
@@ -529,6 +775,7 @@ function renderAll() {
   renderImport();
   renderStats();
   renderImportMeta();
+  renderHome();
 }
 
 function renderLive() {
@@ -586,7 +833,7 @@ function setTheme(theme, persist = true) {
   document.documentElement.dataset.theme = theme;
   state.settings.theme = theme;
   if (persist) send({ cmd: "app.settings.set", settings: { theme } });
-  if (liveChart) { renderLiveChart(); renderImportChart(); }
+  if (liveChart) { renderLiveChart(); renderImportChart(); renderHomeChart(); }
 }
 
 function setLanguage(next, persist = true) {
@@ -601,7 +848,7 @@ function setLanguage(next, persist = true) {
   });
   updateStartButton();
   setStatus(state.connected ? (state.simulated ? "sim" : "online") : "offline");
-  renderStats(); renderImportMeta();
+  renderStats(); renderImportMeta(); renderHome();
   el("lang-menu").hidden = true;
   if (persist) send({ cmd: "app.settings.set", settings: { language: next } });
 }
@@ -665,7 +912,7 @@ function switchView(name) {
     tab.classList.toggle("is-active", tab.dataset.view === name));
   document.querySelectorAll(".view").forEach((view) =>
     view.classList.toggle("is-visible", view.id === "view-" + name));
-  if (liveChart) { liveChart.resize(); importChart.resize(); }
+  if (liveChart) { liveChart.resize(); importChart.resize(); if (homeChart) homeChart.resize(); }
 }
 
 function setupSteppers() {
@@ -757,6 +1004,7 @@ function boot() {
     console.error("charts unavailable:", err);
   }
   buildGaugeTicks();
+  buildHomeGauge();
   wire();
   setupSteppers();
   renderGauge();

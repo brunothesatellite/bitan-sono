@@ -24,6 +24,7 @@
 
   <nav class="tabs" role="tablist">
     <button class="tab is-active" data-view="live" role="tab" data-i18n="tab.live">Temps réel</button>
+    <button class="tab" data-view="home" role="tab" data-i18n="tab.home">Maison</button>
     <button class="tab" data-view="import" role="tab" data-i18n="tab.import">Import / Historique</button>
   </nav>
 
@@ -148,6 +149,83 @@
             <div class="stat"><span data-i18n="stats.min">Minimum</span><strong id="st-min">–</strong></div>
             <div class="stat"><span data-i18n="stats.max">Maximum</span><strong id="st-max">–</strong></div>
             <div class="stat"><span data-i18n="stats.leq">Leq</span><strong id="st-leq">–</strong></div>
+          </div>
+        </article>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================ MAISON ============================ -->
+  <section class="view" id="view-home">
+    <div class="grid-home">
+
+      <div class="col">
+        <article class="card mood-card">
+          <div class="card-head"><h2 data-i18n="home.mood">Ambiance du moment</h2></div>
+          <div class="mood">
+            <span class="mood-dot" id="mood-dot"></span>
+            <div>
+              <strong id="mood-label">–</strong>
+              <small id="mood-sub">–</small>
+            </div>
+          </div>
+        </article>
+
+        <article class="card baro-card">
+          <div class="card-head"><h2 data-i18n="home.baro">Baromètre sonore</h2></div>
+          <div class="baro-readouts">
+            <div class="baro-readout">
+              <span class="baro-value" id="home-laeq1s">–</span>
+              <span class="baro-label">LAeq 1 s · dB</span>
+            </div>
+            <div class="baro-readout">
+              <span class="baro-value" id="home-laeq1m">–</span>
+              <span class="baro-label">LAeq 1 min · dB</span>
+            </div>
+          </div>
+          <svg class="gauge home-gauge" viewBox="0 0 220 140" aria-hidden="true">
+            <g id="home-zones"></g>
+            <g class="gauge-ticks" id="home-ticks"></g>
+            <line id="home-needle" x1="110" y1="118" x2="110" y2="34" />
+            <circle cx="110" cy="118" r="7" class="needle-hub" />
+          </svg>
+          <div class="dose">
+            <span class="dose-dot" aria-hidden="true"></span>
+            <span data-i18n="home.dose">Temps en zone rouge (&gt; 75 dB) aujourd'hui</span>
+            <strong id="home-dose">0 min</strong>
+          </div>
+        </article>
+      </div>
+
+      <div class="col">
+        <article class="card chart-card">
+          <div class="card-head">
+            <h2 data-i18n="chart.home">Météo de la maison</h2>
+            <div class="legend">
+              <span class="lg lg-line"></span><span data-i18n="chart.level">Niveau</span>
+              <span class="lg lg-red"></span><span data-i18n="home.redzone">Zone rouge</span>
+            </div>
+          </div>
+          <div class="chart" id="home-chart"></div>
+        </article>
+
+        <article class="card stats-card">
+          <div class="card-head"><h2 data-i18n="home.session">Session en cours</h2>
+            <span class="muted" id="home-count-label">0</span></div>
+          <div class="stats-grid">
+            <div class="stat"><span data-i18n="home.l10">L10 · pics</span><strong id="hm-l10">–</strong></div>
+            <div class="stat"><span data-i18n="home.l50">L50 · médiane</span><strong id="hm-l50">–</strong></div>
+            <div class="stat"><span data-i18n="home.l90">L90 · fond</span><strong id="hm-l90">–</strong></div>
+            <div class="stat"><span data-i18n="home.leeq">LAeq · total</span><strong id="hm-leq">–</strong></div>
+          </div>
+        </article>
+
+        <article class="card coach-card">
+          <div class="card-head"><h2 data-i18n="home.coach">Conseil du moment</h2></div>
+          <div class="coach">
+            <span class="coach-dot" id="coach-dot"></span>
+            <p id="coach-text">–</p>
           </div>
         </article>
       </div>

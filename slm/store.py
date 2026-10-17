@@ -17,6 +17,11 @@ class Stats:
     maximum: float = 0.0
     average: float = 0.0
     leq: float = 0.0
+    # Standard acoustic percentiles: L10 = level exceeded 10 % of the time
+    # (peaks), L50 = median, L90 = background noise (exceeded 90 %).
+    l10: float = 0.0
+    l50: float = 0.0
+    l90: float = 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -25,6 +30,9 @@ class Stats:
             "max": round(self.maximum, 1),
             "avg": round(self.average, 1),
             "leq": round(self.leq, 1),
+            "l10": round(self.l10, 1),
+            "l50": round(self.l50, 1),
+            "l90": round(self.l90, 1),
         }
 
 
@@ -84,7 +92,23 @@ class MeasurementStore:
             maximum=max(values),
             average=total / len(values),
             leq=10 * math.log10(power) if power > 0 else 0.0,
+            l10=_percentile(values, 90),
+            l50=_percentile(values, 50),
+            l90=_percentile(values, 10),
         )
 
     def to_records(self) -> list[dict]:
         return [m.to_dict() for m in self.items()]
+
+
+def _percentile(values: list[float], pct: float) -> float:
+    """Linear-interpolation percentile (``pct`` in 0..100)."""
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    rank = (len(ordered) - 1) * (pct / 100.0)
+    low = int(rank)
+    frac = rank - low
+    if low + 1 >= len(ordered):
+        return ordered[-1]
+    return ordered[low] + frac * (ordered[low + 1] - ordered[low])

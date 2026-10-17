@@ -235,6 +235,51 @@ main { flex: 1; padding: 16px 20px 18px; max-width: 1700px; margin: 0 auto;
 .stat strong::after { content: " dB"; font-size: 12px; color: var(--text-muted);
   font-weight: 400; }
 
+/* ---------------------------------------------------------------- home */
+.grid-home {
+  display: grid; gap: var(--gap); flex: 1; min-height: 0;
+  grid-template-columns: minmax(340px, 1.05fr) minmax(360px, 1.25fr);
+}
+.mood-card, .baro-card { flex: none; }
+
+.mood { display: flex; align-items: center; gap: 14px; }
+.mood-dot { width: 22px; height: 22px; border-radius: 50%; flex: none;
+  background: var(--text-muted); transition: background .4s ease; }
+.mood strong { display: block; font-size: 20px; }
+.mood small { color: var(--text-muted); font-size: 12.5px; }
+
+.baro-readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.baro-readout { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px; text-align: center; }
+.baro-value { display: block; font-family: var(--mono); font-size: 34px;
+  font-weight: 700; font-variant-numeric: tabular-nums; }
+.baro-label { font-size: 11.5px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .05em; }
+
+.home-gauge { width: min(100%, 360px); margin: 0 auto; }
+.home-gauge .zseg { fill: none; stroke-width: 13; }
+.home-gauge .zseg-ends { stroke-linecap: round; }
+#home-needle { stroke: var(--text); stroke-width: 3; stroke-linecap: round;
+  transition: all .35s cubic-bezier(.4,0,.2,1); }
+.needle-hub { fill: var(--surface-2); stroke: var(--text); stroke-width: 2.5; }
+.home-gauge .ztick { stroke: var(--border-strong); stroke-width: 1.5;
+  stroke-linecap: round; }
+.home-gauge .zlabel { fill: var(--text-muted); font-size: 8.5px;
+  font-family: var(--mono); text-anchor: middle; }
+
+.dose { display: flex; align-items: center; gap: 10px; padding-top: 12px;
+  border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+.dose-dot { width: 10px; height: 10px; border-radius: 50%; background: #f87171;
+  flex: none; }
+.dose strong { margin-left: auto; font-family: var(--mono); font-size: 18px;
+  color: var(--text); font-variant-numeric: tabular-nums; }
+
+.coach { display: flex; gap: 12px; align-items: flex-start; }
+.coach-dot { width: 12px; height: 12px; border-radius: 50%; flex: none;
+  margin-top: 4px; background: var(--text-muted); transition: background .4s ease; }
+.coach p { margin: 0; font-size: 14px; line-height: 1.55; }
+.lg-red { background: #f87171; }
+
 /* ---------------------------------------------------------------- chart */
 .chart { width: 100%; flex: 1; min-height: 170px; }
 .legend { margin-left: auto; display: flex; align-items: center; gap: 8px;
@@ -367,7 +412,7 @@ input[type="number"] { width: 78px; text-align: center; font-family: var(--mono)
   body { overflow: auto; height: auto; }
   main { overflow: visible; height: auto; }
   .view.is-visible { display: block; }
-  .grid-live { grid-template-columns: 1fr; }
+  .grid-live, .grid-home { grid-template-columns: 1fr; }
   .col { display: block; }
   .col > .card { margin-bottom: var(--gap); }
   .chart { height: 300px; flex: none; }
