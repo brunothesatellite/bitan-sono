@@ -241,6 +241,10 @@ main { flex: 1; padding: 16px 20px 18px; max-width: 1700px; margin: 0 auto;
   grid-template-columns: minmax(340px, 1.05fr) minmax(360px, 1.25fr);
 }
 .mood-card, .baro-card { flex: none; }
+/* The weather card absorbs the column's leftover height so that, on tall
+   (fullscreen) windows, the + row follows the content instead of leaving
+   a void under the weather strip. */
+.weather-card { flex: 1; min-height: 0; }
 
 .mood { display: flex; align-items: center; gap: 14px; }
 .mood-dot { width: 22px; height: 22px; border-radius: 50%; flex: none;
@@ -281,7 +285,6 @@ main { flex: 1; padding: 16px 20px 18px; max-width: 1700px; margin: 0 auto;
 .lg-red { background: #f87171; }
 
 /* ---------------------------------------------------------------- weather */
-.weather-card { flex: none; }
 .weather-now { display: flex; align-items: center; gap: 18px; }
 .weather-now #weather-icon { display: inline-flex; width: 148px; height: 148px; flex: none; }
 .weather-now #weather-icon svg { width: 100%; height: 100%; }

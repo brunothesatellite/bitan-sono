@@ -89,7 +89,10 @@ class State:
             "live_count": len(self.live),
             "import_count": len(self.imported),
             "live_stats": self.live.stats().to_dict(),
-            "live_tail": self.live.tail(400),
+            # Plain dicts: Starlette's send_json uses stdlib json, which can
+            # not encode dataclasses (a non-empty tail used to kill the
+            # websocket with a TypeError on every new client).
+            "live_tail": [m.to_dict() for m in self.live.tail(400)],
             "import_records": self.imported.to_records(),
         }
 
@@ -205,7 +208,8 @@ async def _handle_command(ws: WebSocket, state: State, message: dict) -> None:
             {
                 "type": "tail",
                 "which": which,
-                "records": store.tail(int(message.get("count", 0))),
+                # Plain dicts, see snapshot(): dataclasses break send_json.
+                "records": [m.to_dict() for m in store.tail(int(message.get("count", 0)))],
                 "stats": store.stats().to_dict(),
             }
         )
