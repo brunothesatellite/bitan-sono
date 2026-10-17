@@ -1,0 +1,12 @@
+# Runtime
+fastapi>=0.110
+uvicorn[standard]>=0.29
+websockets>=13
+pywebview>=5.0
+pywinusb>=0.4.2      # pure-python HID backend (Windows)
+openpyxl>=3.1        # xlsx export / import
+xlrd>=2.0            # legacy .xls import (optional)
+
+# Dev / build
+pytest>=8.0
+pyinstaller>=6.0

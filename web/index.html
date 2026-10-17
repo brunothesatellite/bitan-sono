@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>bitan-sono · Sonomètre</title>
+<link rel="icon" href="assets/app.ico">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 14v-4M8 18V6M12 21V3M16 17V7M20 13v-2" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" fill="none"/>
+    </svg>
+    <div class="brand-text">
+      <strong>bitan<span>·</span>sono</strong>
+      <small id="brand-sub" data-i18n="app.tagline">Sonomètre — acquisition &amp; analyse</small>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab is-active" data-view="live" role="tab" data-i18n="tab.live">Temps réel</button>
+    <button class="tab" data-view="import" role="tab" data-i18n="tab.import">Import / Historique</button>
+  </nav>
+
+  <div class="appbar-right">
+    <button id="device-pill" class="pill" title="" >
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text" data-i18n="status.connecting">Connexion…</span>
+    </button>
+    <button class="icon-btn" id="btn-settings" data-i18n-title="action.settings" title="Réglages" aria-label="Réglages">
+      <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-theme" title="Thème" aria-label="Thème">
+      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+    </button>
+    <div class="lang">
+      <button class="icon-btn" id="btn-lang" title="Langue" aria-label="Langue">
+        <span id="lang-code">FR</span>
+      </button>
+      <ul class="menu" id="lang-menu" hidden>
+        <li data-lang="fr">Français</li>
+        <li data-lang="en">English</li>
+      </ul>
+    </div>
+    <button class="icon-btn" id="btn-about" title="À propos" aria-label="À propos">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5M12 7.6v.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================ TEMPS RÉEL ============================ -->
+  <section class="view is-visible" id="view-live">
+    <div class="grid-live">
+
+      <div class="col">
+        <article class="card level-card">
+          <div class="card-head">
+            <h2 data-i18n="live.title">Mesure temps réel</h2>
+            <div class="chips">
+              <span class="chip" id="chip-mode" title="Mode de réponse">SLOW</span>
+              <span class="chip" id="chip-weight" title="Pondération fréquentielle">A</span>
+              <span class="chip chip-warn" id="chip-max" hidden>MAX</span>
+              <span class="chip chip-warn" id="chip-batt" hidden data-i18n="live.lowbatt">Pile faible</span>
+            </div>
+          </div>
+
+          <div class="gauge-wrap">
+            <svg class="gauge" viewBox="0 0 220 130" aria-hidden="true">
+              <path class="gauge-track" d="M20 118 A90 90 0 0 1 200 118" />
+              <path class="gauge-fill" id="gauge-fill" d="M20 118 A90 90 0 0 1 200 118" />
+              <g class="gauge-ticks" id="gauge-ticks"></g>
+            </svg>
+            <div class="readout">
+              <div class="readout-value"><span id="live-value" class="placeholder">--.-</span><span class="unit">dB</span></div>
+              <div class="readout-sub" id="live-range">30 ~ 130 dB</div>
+            </div>
+            <div class="level-flags">
+              <span class="flag flag-low" id="flag-under" data-i18n="live.under">Sous le seuil</span>
+              <span class="flag flag-high" id="flag-over" data-i18n="live.over">Au-dessus du seuil</span>
+            </div>
+          </div>
+
+          <div class="thresholds">
+            <div class="threshold">
+              <span class="t-label" data-i18n="live.lowalarm">Alarme basse</span>
+              <strong id="live-low">30</strong><small>dB</small>
+            </div>
+            <div class="threshold-bar">
+              <div class="tb-track"><div class="tb-fill" id="tb-fill"></div>
+                <i class="tb-mark tb-low" id="tb-low"></i><i class="tb-mark tb-high" id="tb-high"></i>
+              </div>
+              <div class="tb-scale"><span id="tb-min">30</span><span id="tb-max">130</span></div>
+            </div>
+            <div class="threshold">
+              <span class="t-label" data-i18n="live.highalarm">Alarme haute</span>
+              <strong id="live-high">45</strong><small>dB</small>
+            </div>
+          </div>
+        </article>
+
+        <article class="card table-card">
+          <div class="card-head">
+            <h2 data-i18n="table.measures">Mesures</h2>
+            <div class="toolbar">
+              <button class="btn btn-primary" id="btn-start" data-i18n="action.start">Démarrer</button>
+              <button class="btn" id="btn-export-live" data-i18n="action.save">Enregistrer</button>
+              <button class="btn" id="btn-clear-live" data-i18n="action.clear">Effacer</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data">
+              <thead><tr>
+                <th data-i18n="col.no">N°</th><th data-i18n="col.value">Valeur</th>
+                <th data-i18n="col.weight">Pondération</th><th data-i18n="col.time">Heure</th>
+                <th data-i18n="col.date">Date</th>
+              </tr></thead>
+              <tbody id="live-rows"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+
+      <div class="col">
+        <article class="card chart-card">
+          <div class="card-head">
+            <h2 data-i18n="chart.live">Évolution du niveau</h2>
+            <div class="legend">
+              <span class="lg lg-line"></span><span data-i18n="chart.level">Niveau</span>
+              <span class="lg lg-high"></span><span data-i18n="live.highalarm">Alarme haute</span>
+              <span class="lg lg-low"></span><span data-i18n="live.lowalarm">Alarme basse</span>
+            </div>
+          </div>
+          <div class="chart" id="live-chart"></div>
+        </article>
+
+        <article class="card stats-card">
+          <div class="card-head"><h2 data-i18n="stats.title">Statistiques</h2>
+            <span class="muted" id="live-count-label">0</span></div>
+          <div class="stats-grid">
+            <div class="stat"><span data-i18n="stats.avg">Moyenne</span><strong id="st-avg">–</strong></div>
+            <div class="stat"><span data-i18n="stats.min">Minimum</span><strong id="st-min">–</strong></div>
+            <div class="stat"><span data-i18n="stats.max">Maximum</span><strong id="st-max">–</strong></div>
+            <div class="stat"><span data-i18n="stats.leq">Leq</span><strong id="st-leq">–</strong></div>
+          </div>
+        </article>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================ IMPORT ============================ -->
+  <section class="view" id="view-import">
+    <div class="grid-import">
+
+      <article class="card import-bar">
+        <div class="toolbar">
+          <button class="btn btn-primary" id="btn-download" data-i18n="action.download">Lire le sonomètre</button>
+          <button class="btn" id="btn-open" data-i18n="action.open">Ouvrir un fichier</button>
+          <button class="btn" id="btn-export-import" data-i18n="action.export">Exporter</button>
+          <button class="btn" id="btn-clear-import" data-i18n="action.clear">Effacer</button>
+        </div>
+        <div class="import-meta">
+          <span class="chip"><span data-i18n="import.total">Enregistrements</span>
+            <strong id="import-count">0</strong></span>
+          <span class="chip"><span data-i18n="stats.min">Minimum</span>
+            <strong id="import-min">–</strong></span>
+          <span class="chip"><span data-i18n="stats.max">Maximum</span>
+            <strong id="import-max">–</strong></span>
+          <span class="chip"><span data-i18n="stats.leq">Leq</span>
+            <strong id="import-leq">–</strong></span>
+        </div>
+        <div class="progress" id="import-progress-wrap" hidden>
+          <div class="progress-bar" id="import-progress"></div>
+        </div>
+      </article>
+
+      <article class="card chart-card">
+        <div class="card-head"><h2 data-i18n="chart.import">Analyse des données</h2></div>
+        <div class="chart" id="import-chart"></div>
+      </article>
+
+      <article class="card table-card">
+        <div class="card-head"><h2 data-i18n="table.records">Enregistrements</h2></div>
+        <div class="table-scroll">
+          <table class="data">
+            <thead><tr>
+              <th data-i18n="col.no">N°</th><th data-i18n="col.value">Valeur</th>
+              <th data-i18n="col.weight">Pondération</th><th data-i18n="col.time">Heure</th>
+              <th data-i18n="col.date">Date</th>
+            </tr></thead>
+            <tbody id="import-rows"></tbody>
+          </table>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================ RÉGLAGES ============================ -->
+<dialog id="dlg-settings" class="sheet">
+  <form method="dialog" class="sheet-inner">
+    <header class="sheet-head">
+      <h2 data-i18n="settings.title">Réglages</h2>
+      <button class="icon-btn" value="cancel" aria-label="Fermer">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="sheet-body">
+      <section class="field-group">
+        <h3 data-i18n="settings.device">Appareil</h3>
+        <div class="field">
+          <label data-i18n="settings.range">Gamme de mesure</label>
+          <select id="set-range">
+            <option value="0">30 ~ 130 dB</option>
+            <option value="1">30 ~ 80 dB</option>
+            <option value="2">50 ~ 100 dB</option>
+            <option value="3">60 ~ 110 dB</option>
+            <option value="4">80 ~ 130 dB</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-i18n="settings.response">Réponse</label>
+          <div class="segmented" id="set-mode">
+            <label><input type="radio" name="mode" value="FAST"><span>FAST</span></label>
+            <label><input type="radio" name="mode" value="SLOW" checked><span>SLOW</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label data-i18n="settings.weighting">Pondération</label>
+          <div class="segmented" id="set-weight">
+            <label><input type="radio" name="weight" value="A" checked><span>A</span></label>
+            <label><input type="radio" name="weight" value="C"><span>C</span></label>
+          </div>
+        </div>
+        <div class="field field-inline">
+          <label for="set-max" data-i18n="settings.maxhold">Mémoriser le maximum (MAX)</label>
+          <input type="checkbox" id="set-max" class="switch">
+        </div>
+        <div class="field-actions">
+          <button class="btn" id="btn-read-settings" data-i18n="settings.readfromdevice">Lire depuis l'appareil</button>
+        </div>
+      </section>
+
+      <section class="field-group">
+        <h3 data-i18n="settings.alarms">Alarmes</h3>
+        <div class="field">
+          <label data-i18n="live.lowalarm">Alarme basse</label>
+          <div class="stepper" data-target="set-low">
+            <button type="button" data-step="-1">−</button>
+            <input type="number" id="set-low" min="0" max="199" value="30">
+            <button type="button" data-step="1">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label data-i18n="live.highalarm">Alarme haute</label>
+          <div class="stepper" data-target="set-high">
+            <button type="button" data-step="-1">−</button>
+            <input type="number" id="set-high" min="0" max="199" value="45">
+            <button type="button" data-step="1">+</button>
+          </div>
+        </div>
+        <div class="field field-inline">
+          <label for="set-sound" data-i18n="settings.sound">Alerte sonore</label>
+          <input type="checkbox" id="set-sound" class="switch">
+        </div>
+      </section>
+
+      <section class="field-group">
+        <h3 data-i18n="settings.app">Application</h3>
+        <div class="field">
+          <label data-i18n="settings.interval">Intervalle d'échantillonnage</label>
+          <div class="stepper" data-target="set-interval" data-step="0.5">
+            <button type="button" data-step="-0.5">−</button>
+            <input type="number" id="set-interval" min="0.5" max="60" step="0.5" value="1">
+            <button type="button" data-step="0.5">+</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="sheet-foot">
+      <button class="btn" value="cancel" data-i18n="action.cancel">Annuler</button>
+      <button class="btn btn-primary" id="btn-save-settings" value="save" data-i18n="action.apply">Appliquer</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ============================ À PROPOS ============================ -->
+<dialog id="dlg-about" class="sheet sheet-sm">
+  <form method="dialog" class="sheet-inner">
+    <header class="sheet-head">
+      <h2 data-i18n="about.title">À propos</h2>
+      <button class="icon-btn" value="cancel" aria-label="Fermer">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <div class="sheet-body about">
+      <div class="about-mark">
+        <svg viewBox="0 0 24 24"><path d="M4 14v-4M8 18V6M12 21V3M16 17V7M20 13v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      </div>
+      <h3>bitan·sono</h3>
+      <p class="muted" id="about-version">v1.0.0</p>
+      <p data-i18n="about.body">Application compagnon open-source pour le sonomètre Bitan / SKU001. Réimplémentation moderne, développée par rétro-ingénierie du protocole USB HID pour l'interopérabilité.</p>
+      <dl class="about-grid">
+        <div><dt>USB</dt><dd>VID 64BD · PID 74E3</dd></div>
+        <div><dt data-i18n="about.license">Licence</dt><dd>MIT</dd></div>
+      </dl>
+    </div>
+    <footer class="sheet-foot">
+      <button class="btn btn-primary" value="cancel" data-i18n="action.close">Fermer</button>
+    </footer>
+  </form>
+</dialog>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<audio id="alarm-audio" hidden></audio>
+
+<script src="vendor/echarts.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

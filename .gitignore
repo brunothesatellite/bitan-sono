@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Build artefacts
+build/
+dist/
+*.spec.bak
+
+# Tests / tooling
+.pytest_cache/
+.coverage
+htmlcov/
+node_modules/
+
+# OS / editors
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
