@@ -19,6 +19,9 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
 |---|---|---|
 | Jauge SPL, voyants FAST/SLOW, MAX, pondération A/C, seuils d'alarme, graphique et tableau en direct | Météo de la maison : baromètre 4 zones, LAeq 1 s / 1 min, dosimètre zone rouge, L10/L50/L90 et conseils bienveillants | Lecture de la mémoire de l'appareil, courbe d'analyse, export Excel/CSV |
 
+![Vue Temps réel](docs/temps-reel.png)
+![Vue Maison](docs/maison.png)
+
 - Interface web moderne (dark/light) affichée dans une **fenêtre native**
   (pywebview / WebView2) — ou dans un simple navigateur.
 - **Acquisition temps réel** : valeur SPL, mode (FAST/SLOW), pondération (A/C),
