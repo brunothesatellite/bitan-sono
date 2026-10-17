@@ -280,6 +280,27 @@ main { flex: 1; padding: 16px 20px 18px; max-width: 1700px; margin: 0 auto;
 .coach p { margin: 0; font-size: 14px; line-height: 1.55; }
 .lg-red { background: #f87171; }
 
+/* ---------------------------------------------------------------- weather */
+.weather-card { flex: none; }
+.weather-now { display: flex; align-items: center; gap: 14px; }
+.weather-now #weather-icon { display: inline-flex; width: 76px; height: 76px; flex: none; }
+.weather-now #weather-icon svg { width: 100%; height: 100%; }
+.weather-now strong { display: block; font-size: 19px; }
+.weather-now small { color: var(--text-muted); font-size: 12.5px; }
+.weather-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.wx { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 6px; text-align: center;
+  opacity: .5; transition: all .3s ease; }
+.wx svg { width: 44px; height: 44px; }
+.wx strong { display: block; font-size: 12px; margin-top: 4px; }
+.wx span { font-size: 10.5px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; }
+.wx.is-active { opacity: 1; }
+.wx[data-zone="0"].is-active { border-color: #2dd4a7; box-shadow: 0 4px 16px -6px #2dd4a7; }
+.wx[data-zone="1"].is-active { border-color: #f5b544; box-shadow: 0 4px 16px -6px #f5b544; }
+.wx[data-zone="2"].is-active { border-color: #fb923c; box-shadow: 0 4px 16px -6px #fb923c; }
+.wx[data-zone="3"].is-active { border-color: #f87171; box-shadow: 0 4px 16px -6px #f87171; }
+
 /* ---------------------------------------------------------------- chart */
 .chart { width: 100%; flex: 1; min-height: 170px; }
 .legend { margin-left: auto; display: flex; align-items: center; gap: 8px;

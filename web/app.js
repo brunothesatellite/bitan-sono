@@ -44,6 +44,11 @@ const I18N = {
     "home.baro": "Baromètre sonore",
     "home.session": "Session en cours",
     "home.coach": "Conseil du moment",
+    "home.weather": "Météo de la maison",
+    "home.wx0": "Soleil",
+    "home.wx1": "Éclaircies",
+    "home.wx2": "Nuageux",
+    "home.wx3": "Orage",
     "home.dose": "Temps en zone rouge (> 75 dB) aujourd'hui",
     "home.l10": "L10 · pics",
     "home.l50": "L50 · médiane",
@@ -134,6 +139,11 @@ const I18N = {
     "home.baro": "Sound barometer",
     "home.session": "Current session",
     "home.coach": "Tip of the moment",
+    "home.weather": "Home weather",
+    "home.wx0": "Sunny",
+    "home.wx1": "Partly cloudy",
+    "home.wx2": "Cloudy",
+    "home.wx3": "Storm",
     "home.dose": "Time in red zone (> 75 dB) today",
     "home.l10": "L10 · peaks",
     "home.l50": "L50 · median",
@@ -425,6 +435,45 @@ const HOME_ZONES = [
 ];
 const zoneOf = (v) => (v < 55 ? 0 : v < 65 ? 1 : v < 75 ? 2 : 3);
 
+/* Original pastel SVG weather drawings (64x64), one per barometer zone. */
+const WX_CLOUD = (fill) =>
+  `<g fill="${fill}"><circle cx="24" cy="38" r="8"/><circle cx="34" cy="32" r="10"/>` +
+  `<circle cx="43" cy="38" r="7.5"/><rect x="16" y="38" width="34" height="9" rx="4.5"/></g>`;
+const WX_ICONS = [
+  `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="16" fill="#ffd66e" opacity=".25"/>` +
+  `<g stroke="#f5b544" stroke-width="3.6" stroke-linecap="round">` +
+  `<line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/>` +
+  `<line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/>` +
+  `<line x1="13.6" y1="13.6" x2="18.6" y2="18.6"/><line x1="45.4" y1="45.4" x2="50.4" y2="50.4"/>` +
+  `<line x1="50.4" y1="13.6" x2="45.4" y2="18.6"/><line x1="18.6" y1="45.4" x2="13.6" y2="50.4"/></g>` +
+  `<circle cx="32" cy="32" r="11.5" fill="#ffd66e"/><circle cx="28.5" cy="28.5" r="4" fill="#ffe6a8" opacity=".8"/></svg>`,
+  `<svg viewBox="0 0 64 64">` +
+  `<g stroke="#f5b544" stroke-width="3.2" stroke-linecap="round">` +
+  `<line x1="20" y1="6" x2="20" y2="11"/><line x1="8" y1="18" x2="12" y2="22"/>` +
+  `<line x1="32" y1="18" x2="28" y2="22"/><line x1="20" y1="30" x2="20" y2="31"/></g>` +
+  `<circle cx="20" cy="22" r="8" fill="#ffd66e"/>` +
+  WX_CLOUD("#e8eef5") + `</svg>`,
+  `<svg viewBox="0 0 64 64">` + WX_CLOUD("#b9c4d4") +
+  `<circle cx="30" cy="29" r="4" fill="#d3dbe6" opacity=".9"/></svg>`,
+  `<svg viewBox="0 0 64 64">` + WX_CLOUD("#7d8ca3") +
+  `<g stroke="#38bdf8" stroke-width="3" stroke-linecap="round">` +
+  `<line x1="24" y1="48" x2="22" y2="56"/><line x1="34" y1="48" x2="32" y2="56"/></g>` +
+  `<polygon points="40,42 31,54 36,54 33.5,62 43,50 38,50 41,42" fill="#ffd23f" ` +
+  `stroke="#eab308" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
+];
+const WX_RANGES = ["< 55 dB", "55 – 65 dB", "65 – 75 dB", "> 75 dB"];
+
+function buildWeatherStrip() {
+  const strip = el("weather-strip");
+  if (!strip) return;
+  strip.innerHTML = "";
+  WX_ICONS.forEach((svg, zone) => {
+    strip.insertAdjacentHTML("beforeend",
+      `<div class="wx" data-zone="${zone}">${svg}<strong>${t("home.wx" + zone)}</strong>` +
+      `<span>${WX_RANGES[zone]}</span></div>`);
+  });
+}
+
 const dose = (() => {
   const key = "bitan-sono-redday";
   const today = () => new Date().toISOString().slice(0, 10);
@@ -525,6 +574,22 @@ function renderHome() {
     needle.setAttribute("x2", x2.toFixed(1));
     needle.setAttribute("y2", y2.toFixed(1));
   }
+
+  // House weather, driven by the same 1-minute reference as the mood.
+  const wxIcon = el("weather-icon"), wxLabel = el("weather-label"), wxSub = el("weather-sub");
+  if (ref === null || ref === undefined) {
+    wxLabel.textContent = "–";
+    wxSub.textContent = t("home.wait");
+  } else {
+    const zone = zoneOf(ref);
+    wxIcon.innerHTML = WX_ICONS[zone];
+    wxLabel.textContent = t("home.wx" + zone);
+    wxLabel.style.color = HOME_ZONES[zone].color;
+    wxSub.textContent = t("home.moodsub", { v: ref.toFixed(1) });
+  }
+  document.querySelectorAll("#weather-strip .wx").forEach((node) =>
+    node.classList.toggle("is-active",
+      ref !== null && ref !== undefined && Number(node.dataset.zone) === zoneOf(ref)));
 
   // Session percentiles.
   const s = state.liveStats || {};
@@ -848,7 +913,7 @@ function setLanguage(next, persist = true) {
   });
   updateStartButton();
   setStatus(state.connected ? (state.simulated ? "sim" : "online") : "offline");
-  renderStats(); renderImportMeta(); renderHome();
+  renderStats(); renderImportMeta(); buildWeatherStrip(); renderHome();
   el("lang-menu").hidden = true;
   if (persist) send({ cmd: "app.settings.set", settings: { language: next } });
 }
@@ -1005,6 +1070,7 @@ function boot() {
   }
   buildGaugeTicks();
   buildHomeGauge();
+  buildWeatherStrip();
   wire();
   setupSteppers();
   renderGauge();

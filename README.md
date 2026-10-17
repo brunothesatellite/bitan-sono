@@ -29,6 +29,7 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
 - **Réglages appareil** : gamme de mesure (5 plages), FAST/SLOW, A/C, MAX.
 - **Statistiques** : minimum, maximum, moyenne, Leq, percentiles L10 / L50 / L90.
 - **Vue Maison** : ambiance du moment, baromètre sonore (LAeq 1 s / 1 min, 4 zones),
+  météo de la maison (soleil, éclaircies, nuageux, orage selon la zone),
   temps passé au-dessus de 75 dB dans la journée et conseil familial contextuel.
 - Fonctionne **sans matériel** grâce à un simulateur intégré.
 
