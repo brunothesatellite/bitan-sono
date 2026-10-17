@@ -282,11 +282,11 @@ main { flex: 1; padding: 16px 20px 18px; max-width: 1700px; margin: 0 auto;
 
 /* ---------------------------------------------------------------- weather */
 .weather-card { flex: none; }
-.weather-now { display: flex; align-items: center; gap: 14px; }
-.weather-now #weather-icon { display: inline-flex; width: 76px; height: 76px; flex: none; }
+.weather-now { display: flex; align-items: center; gap: 18px; }
+.weather-now #weather-icon { display: inline-flex; width: 148px; height: 148px; flex: none; }
 .weather-now #weather-icon svg { width: 100%; height: 100%; }
-.weather-now strong { display: block; font-size: 19px; }
-.weather-now small { color: var(--text-muted); font-size: 12.5px; }
+.weather-now strong { display: block; font-size: 32px; line-height: 1.1; }
+.weather-now small { color: var(--text-muted); font-size: 13.5px; }
 .weather-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .wx { background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 6px; text-align: center;
