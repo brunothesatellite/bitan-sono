@@ -301,6 +301,26 @@ main { flex: 1; padding: 16px 20px 18px; max-width: 1700px; margin: 0 auto;
 .wx[data-zone="2"].is-active { border-color: #fb923c; box-shadow: 0 4px 16px -6px #fb923c; }
 .wx[data-zone="3"].is-active { border-color: #f87171; box-shadow: 0 4px 16px -6px #f87171; }
 
+/* ------------------------------------------------------- home-plus row */
+.home-plus { display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap); margin-top: var(--gap); }
+.trend { display: flex; gap: 12px; align-items: center; }
+.trend #trend-icon { display: inline-flex; width: 40px; height: 40px; flex: none; }
+.trend #trend-icon svg { width: 100%; height: 100%; }
+.trend p { margin: 0; font-size: 14.5px; line-height: 1.5; }
+.cocoon { display: flex; gap: 14px; align-items: center; }
+.cocoon strong { font-family: var(--mono); font-size: 44px; font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.cocoon #cocoon-label { display: block; font-size: 15px; font-weight: 600; }
+.cocoon #cocoon-why { display: block; color: var(--text-muted); font-size: 12.5px;
+  margin-top: 3px; line-height: 1.45; }
+.nap { display: flex; gap: 12px; align-items: flex-start; }
+.nap-dot { width: 12px; height: 12px; border-radius: 50%; flex: none;
+  margin-top: 4px; background: var(--text-muted); transition: background .4s ease; }
+.nap #nap-line1 { display: block; font-size: 14px; }
+.nap #nap-line2 { display: block; color: var(--text-muted); font-size: 12.5px;
+  margin-top: 3px; }
+
 /* ---------------------------------------------------------------- chart */
 .chart { width: 100%; flex: 1; min-height: 170px; }
 .legend { margin-left: auto; display: flex; align-items: center; gap: 8px;
@@ -434,6 +454,7 @@ input[type="number"] { width: 78px; text-align: center; font-family: var(--mono)
   main { overflow: visible; height: auto; }
   .view.is-visible { display: block; }
   .grid-live, .grid-home { grid-template-columns: 1fr; }
+  .home-plus { grid-template-columns: 1fr; }
   .col { display: block; }
   .col > .card { margin-bottom: var(--gap); }
   .chart { height: 300px; flex: none; }

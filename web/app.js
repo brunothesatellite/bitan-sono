@@ -44,6 +44,28 @@ const I18N = {
     "home.baro": "Baromètre sonore",
     "home.session": "Session en cours",
     "home.coach": "Conseil du moment",
+    "home.trend": "Tendance",
+    "home.trendUpFast": "Ça monte fort — préparez un temps calme",
+    "home.trendUp": "Ça s'anime…",
+    "home.trendFlat": "Le niveau se maintient",
+    "home.trendDown": "Ça se calme — éclaircies en vue",
+    "home.cocoon": "Score cocon",
+    "home.cocoon0": "Cocon douillet",
+    "home.cocoon1": "Cocon confortable",
+    "home.cocoon2": "Cocon agité",
+    "home.cocoon3": "Cocon sens dessus dessous",
+    "home.cocoonWhyBg": "Ce qui pèse le plus : le bruit de fond.",
+    "home.cocoonWhyRed": "Ce qui pèse le plus : le temps en zone rouge.",
+    "home.cocoonWhyDyn": "Ce qui pèse le plus : les pics de bruit.",
+    "home.nap": "Mode sieste",
+    "home.napStart": "Démarrer la sieste",
+    "home.napStop": "Arrêter",
+    "home.napIdle": "Pour la sieste : lancez le mode, la carte surveille le calme.",
+    "home.napElapsed": "Sieste en cours depuis {t}",
+    "home.napCalmMin": "{n} min de calme",
+    "home.napCalmSec": "{n} s de calme",
+    "home.napPeak": "Pic à l'instant !",
+    "home.napStab": "Stabilité : {p} % sous 60 dB",
     "home.weather": "Météo de la maison",
     "home.wx0": "Soleil",
     "home.wx1": "Éclaircies",
@@ -139,6 +161,28 @@ const I18N = {
     "home.baro": "Sound barometer",
     "home.session": "Current session",
     "home.coach": "Tip of the moment",
+    "home.trend": "Trend",
+    "home.trendUpFast": "Rising fast — get some quiet time ready",
+    "home.trendUp": "Livening up…",
+    "home.trendFlat": "Level holding steady",
+    "home.trendDown": "Calming down — sunny spells ahead",
+    "home.cocoon": "Cocoon score",
+    "home.cocoon0": "Snug cocoon",
+    "home.cocoon1": "Comfy cocoon",
+    "home.cocoon2": "Restless cocoon",
+    "home.cocoon3": "Upside-down cocoon",
+    "home.cocoonWhyBg": "Weighing most: background noise.",
+    "home.cocoonWhyRed": "Weighing most: time in the red zone.",
+    "home.cocoonWhyDyn": "Weighing most: noise peaks.",
+    "home.nap": "Nap mode",
+    "home.napStart": "Start nap",
+    "home.napStop": "Stop",
+    "home.napIdle": "For nap time: start the mode, the card watches over the quiet.",
+    "home.napElapsed": "Napping for {t}",
+    "home.napCalmMin": "{n} min of quiet",
+    "home.napCalmSec": "{n} s of quiet",
+    "home.napPeak": "Peak right now!",
+    "home.napStab": "Stability: {p}% under 60 dB",
     "home.weather": "Home weather",
     "home.wx0": "Sunny",
     "home.wx1": "Partly cloudy",
@@ -406,7 +450,7 @@ function appendLiveRow(record) {
    ========================================================================== */
 function renderStats() {
   const s = state.liveStats || {};
-  const fmt = (v) => (v === undefined || v === null ? "–" : Number(v).toFixed(1));
+  const fmt = (v) => (!s.count || v === undefined || v === null ? "–" : Number(v).toFixed(1));
   el("st-avg").textContent = fmt(s.avg);
   el("st-min").textContent = fmt(s.min);
   el("st-max").textContent = fmt(s.max);
@@ -416,7 +460,8 @@ function renderStats() {
 
 function renderImportMeta() {
   const s = state.importStats || {};
-  const fmt = (v) => (v === undefined || v === null ? "–" : Number(v).toFixed(1));
+  const empty = !state.imported.length;
+  const fmt = (v) => (empty || v === undefined || v === null ? "–" : Number(v).toFixed(1));
   el("import-count").textContent = state.imported.length;
   el("import-min").textContent = fmt(s.min);
   el("import-max").textContent = fmt(s.max);
@@ -542,7 +587,8 @@ function leqWindow(ms, fallback) {
 
 function renderHome() {
   if (!el("view-home")) return;
-  const fmt = (v) => (v === undefined || v === null ? "–" : Number(v).toFixed(1));
+  const s0 = state.liveStats || {};
+  const fmt = (v) => (!s0.count || v === undefined || v === null ? "–" : Number(v).toFixed(1));
   const last = state.live.length ? state.live[state.live.length - 1] : null;
   const lastValue = last ? Number(last.value) : null;
 
@@ -649,6 +695,129 @@ function renderHomeChart() {
 }
 
 /* ==========================================================================
+   Maison+ : tendance, score cocon, mode sieste
+   ========================================================================== */
+const TREND_SVGS = {
+  up: `<svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+  upFast: `<svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+  flat: `<svg viewBox="0 0 24 24" fill="none" stroke="#2dd4a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="13 5 20 12 13 19"/></svg>`,
+  down: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`,
+};
+
+function trendSlope() {
+  // Least-squares slope (dB per minute) over the trailing 5 minutes.
+  const now = Date.now();
+  const pts = state.live.filter((r) => r._t && now - r._t <= 5 * 60 * 1000);
+  if (pts.length < 6) return null;
+  const t0 = pts[0]._t;
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (const r of pts) {
+    const x = (r._t - t0) / 60000, y = Number(r.value);
+    sx += x; sy += y; sxx += x * x; sxy += x * y;
+  }
+  const n = pts.length;
+  const denom = n * sxx - sx * sx;
+  return denom ? (n * sxy - sx * sy) / denom : 0;
+}
+
+function renderTrend() {
+  const icon = el("trend-icon"), text = el("trend-text");
+  if (!icon || !text) return;
+  const slope = trendSlope();
+  if (slope === null) {
+    icon.innerHTML = "";
+    text.textContent = t("home.wait");
+    return;
+  }
+  let kind, key;
+  if (slope > 6) { kind = "upFast"; key = "home.trendUpFast"; }
+  else if (slope > 2.5) { kind = "up"; key = "home.trendUp"; }
+  else if (slope < -2.5) { kind = "down"; key = "home.trendDown"; }
+  else { kind = "flat"; key = "home.trendFlat"; }
+  icon.innerHTML = TREND_SVGS[kind];
+  text.textContent = t(key);
+}
+
+function cocoonScore() {
+  // 0–100 comfort index. Penalises what the family actually feels:
+  // background hum, red-zone time and peak dynamics.
+  const s = state.liveStats || {};
+  if (!s.count || s.l90 === undefined || s.l90 === null) return null;
+  const l10 = s.l10 ?? s.l90;
+  const parts = [
+    { key: "Bg", pts: 1.8 * Math.max(0, s.l90 - 40) },
+    { key: "Red", pts: Math.min(30, (dose.seconds / 60) * 2.0) },
+    { key: "Dyn", pts: 0.8 * Math.max(0, l10 - s.l90 - 15) },
+  ];
+  const score = Math.max(0, Math.min(100,
+    Math.round(100 - parts.reduce((a, p) => a + p.pts, 0))));
+  const worst = parts.reduce((a, b) => (b.pts > a.pts ? b : a));
+  return { score, worst: worst.pts > 1 ? worst.key : null };
+}
+
+function renderCocoon() {
+  const scoreEl = el("cocoon-score"), label = el("cocoon-label"), why = el("cocoon-why");
+  if (!scoreEl) return;
+  const c = cocoonScore();
+  if (!c) {
+    scoreEl.textContent = "–";
+    label.textContent = "–";
+    why.textContent = t("home.wait");
+    scoreEl.style.color = "var(--text-muted)";
+    return;
+  }
+  scoreEl.textContent = c.score;
+  const band = c.score >= 80 ? 0 : c.score >= 60 ? 1 : c.score >= 40 ? 2 : 3;
+  scoreEl.style.color = HOME_ZONES[band].color;
+  label.textContent = t("home.cocoon" + band);
+  why.textContent = !c.worst ? "" : t("home.cocoonWhy" + c.worst);
+}
+
+const nap = { active: false, start: 0, lastPeak: 0 };
+
+function fmtDur(ms) {
+  const total = Math.floor(ms / 1000);
+  const mm = String(Math.floor(total / 60)).padStart(2, "0");
+  const ss = String(total % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
+function renderNap() {
+  const btn = el("btn-nap"), line1 = el("nap-line1"),
+    line2 = el("nap-line2"), dot = el("nap-dot");
+  if (!btn) return;
+  btn.textContent = nap.active ? t("home.napStop") : t("home.napStart");
+  btn.classList.toggle("btn-primary", !nap.active);
+  if (!nap.active) {
+    line1.textContent = t("home.napIdle");
+    line2.textContent = "";
+    dot.style.background = "var(--text-muted)";
+    return;
+  }
+  const now = Date.now();
+  line1.textContent = t("home.napElapsed", { t: fmtDur(now - nap.start) });
+  const sincePeak = nap.lastPeak ? now - nap.lastPeak : Infinity;
+  if (sincePeak < 10000) {
+    line2.textContent = t("home.napPeak");
+    dot.style.background = "#f87171";
+  } else {
+    const sec = nap.lastPeak ? Math.floor(sincePeak / 1000) : Math.floor((now - nap.start) / 1000);
+    line2.textContent = (sec >= 90 ? t("home.napCalmMin", { n: Math.round(sec / 60) })
+      : t("home.napCalmSec", { n: sec })) + " · " + napStability();
+    dot.style.background = "#2dd4a7";
+  }
+}
+
+function napStability() {
+  // Share of the trailing 10 minutes spent under 60 dB.
+  const now = Date.now();
+  const pts = state.live.filter((r) => r._t && now - r._t <= 10 * 60 * 1000);
+  if (!pts.length) return t("home.napStab", { p: "–" });
+  const calm = pts.filter((r) => Number(r.value) < 60).length;
+  return t("home.napStab", { p: Math.round((100 * calm) / pts.length) });
+}
+
+/* ==========================================================================
    WebSocket
    ========================================================================== */
 let socket, reconnectTimer, pendingHistory = false;
@@ -741,7 +910,10 @@ function handle(msg) {
       }
       break;
     case "cleared":
-      if (msg.which === "live") { state.live = []; state.liveStats = {}; renderLive(); renderStats(); }
+      if (msg.which === "live") {
+        state.live = []; state.liveStats = {}; renderLive(); renderStats();
+        renderTrend(); renderCocoon(); renderNap();
+      }
       else { state.imported = []; state.importStats = {}; renderImport(); }
       toast(t("toast.cleared"));
       break;
@@ -799,6 +971,9 @@ function onMeasurement(record, stats, count) {
     dose.add(Math.max(0.2, Number(state.settings.interval) || 1));
   }
 
+  // Nap mode watches for peaks above the orange zone.
+  if (nap.active && Number(record.value) > 65) nap.lastPeak = Date.now();
+
   const value = el("live-value");
   value.classList.remove("placeholder");
   value.textContent = Number(record.value).toFixed(1);
@@ -813,6 +988,9 @@ function onMeasurement(record, stats, count) {
   renderLiveChart();
   renderStats();
   renderHome();
+  renderTrend();
+  renderCocoon();
+  renderNap();
   checkAlarm(record);
 }
 
@@ -841,6 +1019,9 @@ function renderAll() {
   renderStats();
   renderImportMeta();
   renderHome();
+  renderTrend();
+  renderCocoon();
+  renderNap();
 }
 
 function renderLive() {
@@ -914,6 +1095,7 @@ function setLanguage(next, persist = true) {
   updateStartButton();
   setStatus(state.connected ? (state.simulated ? "sim" : "online") : "offline");
   renderStats(); renderImportMeta(); buildWeatherStrip(); renderHome();
+  renderTrend(); renderCocoon(); renderNap();
   el("lang-menu").hidden = true;
   if (persist) send({ cmd: "app.settings.set", settings: { language: next } });
 }
@@ -1019,6 +1201,13 @@ function wire() {
 
   el("btn-start").addEventListener("click", () =>
     send({ cmd: state.liveRunning ? "live.stop" : "live.start" }));
+
+  el("btn-nap").addEventListener("click", () => {
+    nap.active = !nap.active;
+    nap.start = nap.active ? Date.now() : 0;
+    nap.lastPeak = 0;
+    renderNap();
+  });
 
   el("btn-clear-live").addEventListener("click", () =>
     send({ cmd: "store.clear", which: "live" }));

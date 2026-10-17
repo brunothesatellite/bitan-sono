@@ -31,6 +31,8 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
 - **Vue Maison** : ambiance du moment, baromètre sonore (LAeq 1 s / 1 min, 4 zones),
   météo de la maison (soleil, éclaircies, nuageux, orage selon la zone),
   temps passé au-dessus de 75 dB dans la journée et conseil familial contextuel.
+- **Vue Maison+** : tendance sur 5 min, score cocon 0-100 et mode sieste
+  (surveillance du calme, stabilité sous 60 dB).
 - Fonctionne **sans matériel** grâce à un simulateur intégré.
 
 ## Installation (développement)
