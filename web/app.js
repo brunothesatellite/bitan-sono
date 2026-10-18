@@ -994,20 +994,53 @@ function onMeasurement(record, stats, count) {
   checkAlarm(record);
 }
 
-let alarmCooldown = 0;
-function checkAlarm(record) {
-  if (!state.settings.sound_enabled) return;
-  const now = Date.now();
-  if (now - alarmCooldown < 2000) return;
-  let file = null;
-  if (record.value > state.settings.high_alarm) file = "assets/highalarm.wav";
-  else if (record.value < state.settings.low_alarm) file = "assets/lowalarm.wav";
-  if (!file) return;
-  alarmCooldown = now;
+/* Alarm debouncing: a lone spike must not wake the house.
+   - trigger only after ALARM_NEED consecutive out-of-range samples,
+   - re-arm only once back inside the thresholds by ALARM_HYST dB,
+   - repeat while the condition persists: first recall after 2 s, then 10 s. */
+const ALARM_NEED = 3, ALARM_HYST = 2;
+const alarm = {
+  high: { count: 0, nextAt: 0, first: true },
+  low: { count: 0, nextAt: 0, first: true },
+};
+function beep(file) {
   const audio = el("alarm-audio");
   audio.src = file;
   audio.currentTime = 0;
   audio.play().catch(() => {});
+}
+function checkAlarm(record) {
+  if (!state.settings.sound_enabled) return;
+  const now = Date.now();
+  const v = Number(record.value);
+  const high = state.settings.high_alarm, low = state.settings.low_alarm;
+  if (v > high) {
+    const a = alarm.high;
+    alarm.low.count = 0; alarm.low.first = true; alarm.low.nextAt = 0;
+    a.count++;
+    if (a.count >= ALARM_NEED && now >= a.nextAt) {
+      beep("assets/highalarm.wav");
+      a.nextAt = now + (a.first ? 2000 : 10000);
+      a.first = false;
+    }
+  } else if (v < low) {
+    const a = alarm.low;
+    alarm.high.count = 0; alarm.high.first = true; alarm.high.nextAt = 0;
+    a.count++;
+    if (a.count >= ALARM_NEED && now >= a.nextAt) {
+      beep("assets/lowalarm.wav");
+      a.nextAt = now + (a.first ? 2000 : 10000);
+      a.first = false;
+    }
+  } else {
+    // Hysteresis band: forget only once clearly back inside.
+    if (v <= high - ALARM_HYST) {
+      alarm.high.count = 0; alarm.high.first = true; alarm.high.nextAt = 0;
+    }
+    if (v >= low + ALARM_HYST) {
+      alarm.low.count = 0; alarm.low.first = true; alarm.low.nextAt = 0;
+    }
+  }
 }
 
 /* ==========================================================================

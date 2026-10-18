@@ -25,7 +25,8 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
 - Interface web moderne (dark/light) affichée dans une **fenêtre native**
   (pywebview / WebView2) — ou dans un simple navigateur.
 - **Acquisition temps réel** : valeur SPL, mode (FAST/SLOW), pondération (A/C),
-  gamme, indicateur MAX, pile faible, alarmes visuelles et sonores.
+  gamme, indicateur MAX, pile faible, alarmes visuelles et sonores (déclenchement
+  après 3 échantillons consécutifs, hystérésis ±2 dB, rappel 2 s puis 10 s).
 - **Historique** : téléchargement des enregistrements stockés dans le sonomètre.
 - **Export / import** : XLSX, CSV et `.xls` hérités (compatible avec les fichiers
   produits par l'ancien logiciel).
