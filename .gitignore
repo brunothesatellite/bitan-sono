@@ -11,6 +11,12 @@ build/
 dist/
 *.spec.bak
 
+# Artefacts de release : ils voyagent avec les « releases » GitHub,
+# pas dans le dépôt (exe, APK, zip de la webapp, quelle que soit la version).
+*.exe
+*.apk
+bitan-sono-webapp-*.zip
+
 # Tests / tooling
 .pytest_cache/
 .coverage
