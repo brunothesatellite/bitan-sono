@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sonomètre Bitan / SKU001 : VID 0x64BD, PID 0x74E3 (25789 / 29923).
+  Ce filtre sert uniquement à proposer l'application quand on branche
+  l'appareil : il n'accorde aucun droit, l'autorisation est demandée ensuite.
+-->
+<resources>
+    <usb-device vendor-id="25789" product-id="29923" />
+</resources>

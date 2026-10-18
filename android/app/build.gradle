@@ -1,0 +1,108 @@
+/* ==========================================================================
+   Application Android — la coquille native
+   --------------------------------------------------------------------------
+   Ce module produit une APK qui contient :
+     - la webapp de ./mobile, recopiée à la compilation dans les assets ;
+     - une implémentation USB host en Java (UsbBridge) qui revendique
+       l'interface HID avec claimInterface(iface, true), ce que le noyau
+       refuse au navigateur ;
+     - un shim JavaScript (bridge.js) qui expose l'objet window.BitanBridge
+       attendu par le transport « passerelle native » de la webapp.
+
+   Aucune dépendance externe : ni AndroidX, ni Material. Juste le framework.
+   ========================================================================== */
+
+plugins {
+    id "com.android.application"
+}
+
+// La webapp vit dans ./mobile et n'est jamais dupliquée dans le dépôt :
+// elle est recopiée ici, dans un dossier généré.
+def webappDir = rootProject.file("../mobile")
+def generatedWeb = layout.buildDirectory.dir("generated/webapp").get().asFile
+
+android {
+    namespace = "fr.bitansono.app"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "fr.bitansono.app"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 5
+        versionName = "0.5"
+        resourceConfigurations += ["fr", "en"]
+    }
+
+    signingConfigs {
+        release {
+            storeFile = rootProject.file("keystore/bitan-sono.jks")
+            storePassword = "bitan-sono"
+            keyAlias = "bitan-sono"
+            keyPassword = "bitan-sono"
+        }
+    }
+
+    buildTypes {
+        release {
+            // R8 reste désactivé : il pourrait rogner les méthodes annotées
+            // @JavascriptInterface, que rien n'appelle depuis Java.
+            minifyEnabled = false
+            shrinkResources = false
+            signingConfig = signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            // Le dossier généré s'ajoute aux assets physiques (bridge.js).
+            assets.srcDirs += generatedWeb.path
+        }
+    }
+
+    lint {
+        abortOnError = false
+    }
+}
+
+/**
+ * Recopie la webapp dans les assets de l'APK, sans jamais modifier ./mobile.
+ * Seuls les fichiers d'exécution sont pris : ni tests, ni outils, ni docs.
+ */
+tasks.register("copyWebapp", Copy) {
+    from(webappDir) {
+        include "index.html"
+        include "style.css"
+        include "manifest.webmanifest"
+        include "sw.js"
+        include "*.js"
+        include "assets/**"
+        exclude "tests/**"
+        exclude "tools/**"
+        exclude "docs/**"
+        exclude "package.json"
+        exclude "serve.py"
+        exclude "README.md"
+        exclude "android/**"
+    }
+    into new File(generatedWeb, "web")
+    doFirst {
+        delete new File(generatedWeb, "web")
+    }
+    doLast {
+        logger.lifecycle("Webapp embarquée : " + fileTree(new File(generatedWeb, "web")).matching { include "**/*" }.files.size() + " fichiers")
+    }
+}
+
+// Les assets sont fusionnés par les tâches `merge*Assets` : on s'y accroche.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn("copyWebapp")
+}
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn("copyWebapp")
+}

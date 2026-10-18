@@ -1,0 +1,14 @@
+{
+  "name": "bitan-sono-mobile",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Webapp mobile (portrait, USB OTG) pour le sonomètre Bitan / SKU001",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python serve.py",
+    "icons": "python tools/make_icons.py",
+    "fixtures": "python tools/capture_fixtures.py"
+  }
+}

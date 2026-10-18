@@ -1,0 +1,10 @@
+# Artefacts de compilation et secrets locaux.
+build/
+.gradle/
+local.properties
+keystore/
+*.jks
+
+# L'APK est un artefact de compilation : il voyage avec les « releases »,
+# pas dans le dépôt.
+*.apk

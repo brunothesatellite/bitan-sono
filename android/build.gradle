@@ -1,0 +1,4 @@
+/* Racine du projet : tout le travail est dans :app. */
+plugins {
+    id "com.android.application" apply false
+}

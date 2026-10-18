@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1120" />
+    <meta name="description" content="bitan·sono mobile — sonomètre Bitan / SKU001 en USB OTG" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>bitan·sono</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="banner-insecure" class="banner warn" hidden></div>
+    <div id="banner-error" class="banner error" hidden>
+      <span id="banner-error-text"></span>
+      <button type="button" class="banner-close" id="banner-error-close" aria-label="Fermer">×</button>
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9h3l4-3.5v13L7 15H4z" fill="currentColor" />
+          <path d="M14.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" />
+          <path d="M17 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" />
+        </svg>
+        <span>bitan·sono</span>
+      </div>
+      <button type="button" id="device-pill" class="pill is-offline">
+        <span class="dot"></span>
+        <span id="status-text">—</span>
+      </button>
+    </header>
+
+    <main id="main">
+      <!-- ============================================================ DIRECT -->
+      <section class="view is-active" id="view-live">
+        <div class="card" id="demo-card" hidden>
+          <h2 id="demo-title"></h2>
+          <div class="chips" id="demo-profiles"></div>
+        </div>
+
+        <div class="card hero">
+          <div class="hero-value">
+            <span class="big placeholder" id="live-value">–</span>
+            <span class="unit">dB</span>
+          </div>
+          <div class="chips">
+            <span class="chip" id="chip-mode">—</span>
+            <span class="chip" id="chip-weight">—</span>
+            <span class="chip" id="chip-range">—</span>
+            <span class="chip is-warn" id="chip-max" hidden>MAX</span>
+            <span class="chip is-warn" id="chip-batt" hidden></span>
+          </div>
+          <svg class="gauge" id="gauge" viewBox="0 0 260 150" role="img" aria-label="Niveau sonore"></svg>
+          <div class="flags">
+            <span class="flag" id="flag-under"></span>
+            <span class="flag" id="flag-over"></span>
+          </div>
+          <button type="button" class="btn primary block" id="btn-live">Démarrer</button>
+          <p class="muted center" id="live-hint"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="stats-title">Session</h2>
+          <div class="grid4">
+            <div class="stat"><small id="lbl-min">Minimum</small><strong id="st-min">–</strong></div>
+            <div class="stat"><small id="lbl-avg">Moyenne</small><strong id="st-avg">–</strong></div>
+            <div class="stat"><small id="lbl-max">Maximum</small><strong id="st-max">–</strong></div>
+            <div class="stat"><small id="lbl-leq">Leq</small><strong id="st-leq">–</strong></div>
+          </div>
+          <p class="muted center" id="live-count"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="chart-live-title">Évolution du niveau</h2>
+          <canvas class="chart" id="chart-live"></canvas>
+        </div>
+
+        <div class="card">
+          <h2 id="recent-title">Dernières mesures</h2>
+          <div class="rows" id="live-rows"></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ MAISON -->
+      <section class="view" id="view-home">
+        <div class="card weather">
+          <h2 id="home-weather-title">Météo de la maison</h2>
+          <div class="weather-now">
+            <div class="wx-icon" id="weather-icon"></div>
+            <div class="weather-text">
+              <strong id="weather-label">–</strong>
+              <small id="weather-sub"></small>
+            </div>
+          </div>
+          <div class="wx-strip" id="weather-strip"></div>
+        </div>
+
+        <div class="card">
+          <h2 id="home-baro-title">Baromètre sonore</h2>
+          <svg class="baro" id="home-gauge" viewBox="0 0 220 156" role="img" aria-label="Baromètre 30 à 90 dB"></svg>
+          <div class="mood">
+            <span class="dot" id="mood-dot"></span>
+            <strong id="mood-label">–</strong>
+          </div>
+          <div class="grid2 leq">
+            <div class="stat"><small id="lbl-laeq1s">LAeq 1 s</small><strong id="home-laeq1s">–</strong></div>
+            <div class="stat"><small id="lbl-laeq1m">LAeq 1 min</small><strong id="home-laeq1m">–</strong></div>
+          </div>
+        </div>
+
+        <h2 class="section-title" id="home-plus-title">Maison+</h2>
+        <div class="grid2">
+          <div class="card mini" id="card-trend">
+            <h3 id="home-trend-title">Tendance</h3>
+            <div class="trend-icon" id="trend-icon"></div>
+            <p class="mini-text" id="trend-text"></p>
+          </div>
+          <div class="card mini" id="card-cocoon">
+            <h3 id="home-cocoon-title">Score cocon</h3>
+            <div class="cocoon-score" id="cocoon-score">–</div>
+            <p class="mini-text" id="cocoon-label">–</p>
+            <p class="muted mini-why" id="cocoon-why"></p>
+          </div>
+        </div>
+
+        <div class="card" id="card-nap">
+          <h3 id="home-nap-title">Mode sieste</h3>
+          <div class="nap-row">
+            <span class="dot" id="nap-dot"></span>
+            <div>
+              <p class="mini-text" id="nap-line1"></p>
+              <p class="muted mini-why" id="nap-line2"></p>
+            </div>
+          </div>
+          <button type="button" class="btn block" id="btn-nap">Démarrer la sieste</button>
+        </div>
+
+        <div class="card">
+          <h2 id="home-session-title">Session en cours</h2>
+          <div class="grid2">
+            <div class="stat"><small id="lbl-l10">L10 · pics</small><strong id="hm-l10">–</strong></div>
+            <div class="stat"><small id="lbl-l50">L50 · médiane</small><strong id="hm-l50">–</strong></div>
+            <div class="stat"><small id="lbl-l90">L90 · fond</small><strong id="hm-l90">–</strong></div>
+            <div class="stat"><small id="lbl-hleq">LAeq · total</small><strong id="hm-leq">–</strong></div>
+          </div>
+          <p class="muted center" id="home-count"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="home-dose-title">Zone rouge</h2>
+          <p class="dose" id="home-dose">—</p>
+        </div>
+
+        <div class="card">
+          <h2 id="home-coach-title">Conseil du moment</h2>
+          <div class="coach">
+            <span class="dot" id="coach-dot"></span>
+            <p id="coach-text"></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="chart-home-title">Météo de la maison</h2>
+          <canvas class="chart" id="chart-home"></canvas>
+        </div>
+      </section>
+
+      <!-- ============================================================ MEMOIRE -->
+      <section class="view" id="view-memory">
+        <div class="card">
+          <h2 id="memory-title">Journal de l'appareil</h2>
+          <p class="muted" id="memory-hint"></p>
+          <button type="button" class="btn primary block" id="btn-history">Lire le sonomètre</button>
+          <progress id="history-progress" max="100" value="0" hidden></progress>
+          <p class="muted center" id="memory-progress"></p>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2 id="memory-count-title">Enregistrements</h2>
+            <span class="badge" id="memory-count">0</span>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn" id="btn-export-csv">Exporter CSV</button>
+            <button type="button" class="btn ghost" id="btn-clear-history">Effacer</button>
+          </div>
+          <p class="muted center" id="memory-truncated" hidden></p>
+          <div class="rows" id="history-rows"></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ REGLAGES -->
+      <section class="view" id="view-settings">
+        <div class="card">
+          <h2 id="settings-connection">Connexion</h2>
+          <label class="field">
+            <span id="lbl-transport">Liaison</span>
+            <select id="sel-transport">
+              <option value="auto">Automatique</option>
+              <option value="hid">WebHID (USB)</option>
+              <option value="usb">WebUSB (OTG)</option>
+              <option value="relay">Serveur distant</option>
+              <option value="sim">Démo (sans appareil)</option>
+            </select>
+          </label>
+          <label class="field" id="field-relay" hidden>
+            <span id="lbl-relay">Adresse du serveur</span>
+            <input type="text" id="inp-relay" inputmode="url" placeholder="192.168.1.20:8765" />
+          </label>
+          <p class="muted" id="relay-hint" hidden></p>
+          <div class="actions">
+            <button type="button" class="btn primary" id="btn-connect">Connecter</button>
+            <button type="button" class="btn ghost" id="btn-disconnect">Déconnecter</button>
+          </div>
+          <p class="muted" id="conn-state"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="settings-diagnostics">Diagnostic</h2>
+          <dl class="diag" id="diag-list"></dl>
+        </div>
+
+        <div class="card">
+          <h2 id="settings-device">Appareil</h2>
+          <label class="field">
+            <span id="lbl-response">Réponse</span>
+            <div class="segmented" id="seg-mode">
+              <button type="button" data-value="SLOW">SLOW</button>
+              <button type="button" data-value="FAST">FAST</button>
+            </div>
+          </label>
+          <label class="field">
+            <span id="lbl-weighting">Pondération</span>
+            <div class="segmented" id="seg-weight">
+              <button type="button" data-value="A">A</button>
+              <button type="button" data-value="C">C</button>
+            </div>
+          </label>
+          <label class="field">
+            <span id="lbl-range">Gamme de mesure</span>
+            <select id="sel-range"></select>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="chk-maxhold" />
+            <span id="lbl-maxhold">Mémoriser le maximum (MAX)</span>
+          </label>
+          <div class="actions">
+            <button type="button" class="btn primary" id="btn-send-device">Envoyer à l'appareil</button>
+            <button type="button" class="btn" id="btn-read-device">Lire depuis l'appareil</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="settings-alarms">Alarmes</h2>
+          <label class="field">
+            <span><span id="lbl-alarm-low">Alarme basse</span> : <b id="alarm-low-value">30</b> dB</span>
+            <input type="range" id="rng-alarm-low" min="20" max="120" step="1" value="30" />
+          </label>
+          <label class="field">
+            <span><span id="lbl-alarm-high">Alarme haute</span> : <b id="alarm-high-value">45</b> dB</span>
+            <input type="range" id="rng-alarm-high" min="20" max="130" step="1" value="45" />
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="chk-sound" />
+            <span id="lbl-sound">Alerte sonore</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="chk-vibrate" />
+            <span id="lbl-vibrate">Vibration</span>
+          </label>
+          <p class="muted" id="lbl-vibrate-hint"></p>
+          <div class="actions">
+            <button type="button" class="btn" id="btn-test-sound">Tester</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="settings-app">Application</h2>
+          <label class="field">
+            <span><span id="lbl-interval">Intervalle d'échantillonnage (s)</span> : <b id="interval-value">1</b></span>
+            <input type="range" id="rng-interval" min="0.2" max="5" step="0.1" value="1" />
+          </label>
+          <label class="field">
+            <span id="lbl-theme">Thème</span>
+            <div class="segmented" id="seg-theme">
+              <button type="button" data-value="dark">Sombre</button>
+              <button type="button" data-value="light">Clair</button>
+            </div>
+          </label>
+          <label class="field">
+            <span id="lbl-language">Langue</span>
+            <div class="segmented" id="seg-lang">
+              <button type="button" data-value="fr">FR</button>
+              <button type="button" data-value="en">EN</button>
+            </div>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="chk-wakelock" />
+            <span id="lbl-wakelock">Garder l'écran allumé</span>
+          </label>
+          <p class="muted" id="lbl-wakelock-hint"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="settings-otg">Brancher le sonomètre en OTG</h2>
+          <p class="muted" id="otg-hint"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="settings-about">À propos</h2>
+          <p class="muted" id="about-body"></p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" id="tabbar">
+      <button type="button" class="tab is-active" data-view="live">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-5 3 10 2.5-7 2 4h5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="tab-live">Direct</span>
+      </button>
+      <button type="button" class="tab" data-view="home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 11v8h11v-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="tab-home">Maison</span>
+      </button>
+      <button type="button" class="tab" data-view="memory">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span id="tab-memory">Mémoire</span>
+      </button>
+      <button type="button" class="tab" data-view="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5v2.2M12 18.3v2.2M4.9 7.4l1.9 1.1M17.2 15.5l1.9 1.1M4.9 16.6l1.9-1.1M17.2 8.5l1.9-1.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span id="tab-settings">Réglages</span>
+      </button>
+    </nav>
+
+    <div class="toast" id="toast" hidden></div>
+    <audio id="alarm-audio" hidden></audio>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

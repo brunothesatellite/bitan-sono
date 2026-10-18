@@ -39,6 +39,39 @@ seuls l'icône et les deux sons d'alarme proviennent de l'installation d'origine
   (surveillance du calme, stabilité sous 60 dB).
 - Fonctionne **sans matériel** grâce à un simulateur intégré.
 
+---
+
+## Trois versions, un seul moteur
+
+Choisissez selon l'appareil qui sera branché au sonomètre.
+
+| Version | Pour quoi | Sources | Comment l'obtenir |
+|---|---|---|---|
+| **Bureau** *(Windows)* | PC, fenêtre native, export Excel, historique complet, alarmes sonores | `run.py`, `slm/`, `web/` | `bitan-sono.exe` — autonome, sans Python installé |
+| **Mobile** *(webapp)* | téléphone ou PC, dans le navigateur ; déployable sur un serveur web | `mobile/` | `bitan-sono-webapp-x.y.zip` à déposer tel quel |
+| **Android** *(APK)* | téléphone, sonomètre **branché en OTG** | `android/` | `bitan-sono-x.y.apk` — à installer soi-même |
+
+### Laquelle choisir ?
+
+- **Le sonomètre est branché à l'ordinateur** → **Bureau**. C'est la plus
+  complète : export XLSX/CSV, import des `.xls` de l'ancien logiciel,
+  téléchargement de l'historique de l'appareil.
+- **Vous voulez suivre les mesures depuis le téléphone** → **Mobile**, en mode
+  « Serveur distant » : l'ordinateur garde le sonomètre et diffuse les mesures,
+  le téléphone se contente de les afficher. C'est la seule combinaison qui
+  fonctionne *à coup sûr* sur Android, quel que soit l'appareil.
+- **Vous voulez le sonomètre directement sur le téléphone, en USB** → **Android**.
+  Un navigateur ne peut pas s'emparer d'une interface HID déjà tenue par le
+  noyau ; Java, si. C'est toute la raison d'être de l'APK.
+
+### Captures de la version mobile
+
+![Mobile — Direct](mobile/docs/direct.png)
+![Mobile — Maison](mobile/docs/maison.png)
+
+Chaque dossier a son propre mode d'emploi :
+[`mobile/README.md`](mobile/README.md) et [`android/README.md`](android/README.md).
+
 ## Installation (développement)
 
 ```powershell
@@ -78,12 +111,28 @@ Si la **fenêtre native** ne parvient pas à s'afficher (pilote WebView2 lent ou
 verrouillé), l'application ouvre automatiquement l'interface dans le navigateur
 au bout de 30 s : le serveur local est indépendant de la fenêtre.
 
-## Construire l'exécutable
+## Construire les trois versions
 
 ```powershell
+# 1. Bureau — exécutable Windows autonome
 pyinstaller build.spec --noconfirm
-# résultat : dist\bitan-sono.exe (autonome, sans Python installé)
+# résultat : dist\bitan-sono.exe
+
+# 2. Mobile — dossier déployable sur un serveur web
+#    (tout mobile/ sauf tests, outils, docs)
+Compress-Archive -Path mobile\index.html,mobile\style.css,mobile\*.js,`
+  mobile\manifest.webmanifest,mobile\assets -DestinationPath bitan-sono-webapp.zip
+
+# 3. Android — APK à installer soi-même
+cd android
+set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
+gradlew.bat assembleRelease --offline
+# résultat : app\build\outputs\apk\release\app-release.apk
 ```
+
+L'APK embarque la webapp de `mobile/` telle quelle : corriger la webapp puis
+recompiler suffit, les deux ne peuvent pas diverger. Détails de signature et
+d'installation dans [`android/README.md`](android/README.md).
 
 ## Tests
 
@@ -92,6 +141,10 @@ pyinstaller build.spec --noconfirm
 .\.venv\Scripts\python.exe scripts\smoke.py      # de bout en bout (simulateur)
 .\.venv\Scripts\python.exe scripts\smoke.py --device real
 .\.venv\Scripts\python.exe scripts\probe_device.py   # validation matérielle
+
+cd mobile
+npm test                       # 68 tests : protocole, analyses, alarmes, transports
+node --test tests\ui.spec.cjs  # 16 tests d'interface (navigateur, portrait)
 ```
 
 ---
@@ -189,10 +242,18 @@ slm/
   server.py            API REST + WebSocket (pont UI ↔ appareil)
 web/                   interface (HTML/CSS/JS, ECharts)
   index.html app.js style.css vendor/echarts.min.js assets/
+mobile/                webapp autonome (portrait, OTG, déployable sur un serveur)
+android/               coquille Android : WebView + accès USB natif (l'APK)
 tests/                 tests unitaires
 scripts/               serve.py, smoke.py, probe_device.py, probe_settings.py
 build.spec             configuration PyInstaller
 ```
+
+La webapp de `mobile/` a son propre moteur JavaScript, indépendant de `web/` :
+elle n'a besoin d'aucun serveur Python pour *afficher*, et sait parler au
+sonomètre par cinq liaisons différentes (WebHID, WebUSB, relais, démo, et la
+passerelle native fournie par l'APK). Le dossier `android/` ne duplique pas ce
+code : il l'embarque depuis `mobile/` au moment de la compilation.
 
 Le back-end Python reste indépendant de l'interface : il est utilisable seul
 (WebSocket/REST documentés dans `slm/server.py`).
