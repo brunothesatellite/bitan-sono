@@ -430,6 +430,38 @@ test("IHM mobile en portrait — parcours complet en mode demo", { skip }, async
     await page.click('#seg-theme button[data-value="dark"]');
   });
 
+  /* ------------------------------------------------- seuils des zones */
+  await t.test("les seuils des zones se configurent et survivent au rechargement", async () => {
+    await page.click('.tab[data-view="settings"]');
+    assert.equal(await page.locator("#set-zones .thr-row").count(), 3, "trois seuils attendus");
+    assert.equal(await page.locator("#set-zones-preview .zseg").count(), 4, "quatre zones attendues");
+
+    // Descendre le premier seuil à 50 : la bande annonce « < 50 dB ».
+    await page.fill("#set-ht1", "50");
+    await page.dispatchEvent("#set-ht1", "change");
+    assert.deepEqual(await page.evaluate(() => window.__bitan.settings.homeT), [50, 65, 75]);
+    const strip = await page.locator("#weather-strip .wx span").allInnerTexts();
+    assert.ok(strip[0].includes("< 50 dB"), `bande inattendue : ${strip.join(" / ")}`);
+
+    // L'ordre est imposé : un seuil 2 sous le seuil 1 se coince à 51.
+    await page.fill("#set-ht2", "40");
+    await page.dispatchEvent("#set-ht2", "change");
+    assert.deepEqual(await page.evaluate(() => window.__bitan.settings.homeT), [50, 51, 75]);
+
+    // Persistance après rechargement.
+    await page.reload({ waitUntil: "load" });
+    await page.waitForFunction(() => Boolean(window.__bitan));
+    await page.waitForTimeout(300);
+    assert.deepEqual(await page.evaluate(() => window.__bitan.settings.homeT), [50, 51, 75]);
+
+    // On remet les valeurs d'origine pour ne pas laisser de préférences bâtardes.
+    await page.click('.tab[data-view="settings"]');
+    await page.click("#btn-reset-zones");
+    assert.deepEqual(await page.evaluate(() => window.__bitan.settings.homeT), [55, 65, 75]);
+    const stripBack = await page.locator("#weather-strip .wx span").allInnerTexts();
+    assert.ok(stripBack[0].includes("< 55 dB"), `bande inattendue : ${stripBack.join(" / ")}`);
+  });
+
   /* ----------------------------------------------------------------- relais */
   // Ne s'execute que si un serveur de bureau tourne :
   //   BITAN_RELAY_URL=http://192.168.1.20:8765/ node --test tests/ui.spec.cjs

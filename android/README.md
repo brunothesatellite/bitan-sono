@@ -101,7 +101,7 @@ gradlew.bat assembleRelease --offline
 ```
 
 L'APK sort dans `app\build\outputs\apk\release\app-release.apk`, et une copie
-commode est déposée à la racine du dossier sous `bitan-sono-0.1.apk`.
+commode est déposée à la racine du dossier sous `bitan-sono-<version>.apk`.
 
 `--offline` n'est pas obligatoire mais accélère : le plugin Android et Gradle
 sont déjà dans le cache de la machine. Sans ce drapeau, Gradle vérifie les
@@ -136,7 +136,7 @@ la nouvelle : Android refuse une mise à jour signée par une autre clé.
 
 L'APK n'est pas sur le Play Store, et n'a pas besoin de l'être.
 
-1. copiez `bitan-sono-0.1.apk` sur le téléphone (câble, ou en le déposant sur
+1. copiez `bitan-sono-<version>.apk` sur le téléphone (câble, ou en le déposant sur
    votre serveur web et en le téléchargeant depuis le navigateur) ;
 2. ouvrez le fichier depuis le gestionnaire de fichiers ;
 3. Android demande d'autoriser l'installation depuis cette source : acceptez
@@ -146,7 +146,7 @@ L'APK n'est pas sur le Play Store, et n'a pas besoin de l'être.
 Avec un câble et `adb`, plus direct :
 
 ```bat
-adb install -r bitan-sono-0.1.apk
+adb install -r bitan-sono-<version>.apk
 ```
 
 ---

@@ -20,7 +20,7 @@ les icônes et les sons sont générés et fournis avec le projet.
 | **Direct** | valeur instantanée en gros, jauge 30–130 dB avec repères d'alarme, min/moyenne/max/Leq de la session, courbe d'évolution, dernières mesures |
 | **Maison** | météo du moment (Soleil / Éclaircies / Nuageux / Orage), baromètre sonore, tendance, score cocon, mode sieste, L10/L50/L90, temps passé en zone rouge, conseil du moment |
 | **Mémoire** | lecture du journal du sonomètre (jusqu'à 31 000 enregistrements), export CSV réimportable par l'application de bureau |
-| **Réglages** | liaison, diagnostic, réglages de l'appareil (SLOW/FAST, pondération A/C, gamme, MAX), alarmes, thème, langue, écran allumé, aide OTG |
+| **Réglages** | liaison, diagnostic, réglages de l'appareil (SLOW/FAST, pondération A/C, gamme, MAX), alarmes, zones de la Maison (3 seuils, 55/65/75 dB par défaut), thème, langue, écran allumé, aide OTG |
 
 L'alarme sonore reprend la règle de la version bureau : il faut **3 mesures
 consécutives** hors seuil pour déclencher, il faut revenir à **±2 dB** du seuil

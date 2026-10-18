@@ -694,6 +694,118 @@ input[type="range"] {
   color: var(--accent-ink);
 }
 
+/* --------------------------------------- seuils des zones de la Maison */
+.zbar {
+  display: flex;
+  height: 30px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin: 2px 0 6px;
+}
+.zseg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.25s ease;
+}
+.zseg:first-child {
+  border-left: 0;
+}
+.zlab {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.thr-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.thr-row:first-child {
+  border-top: 0;
+}
+.thr-side {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.thr-side svg {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+.thr-side b {
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+.thr-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+.thr-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 5px;
+}
+.thr-step button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1;
+}
+.thr-step input {
+  width: 52px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.thr-step .unit {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding-right: 7px;
+}
+@media (max-width: 380px) {
+  .thr-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "left right" "step step";
+    row-gap: 10px;
+  }
+  .thr-row .thr-side:first-child {
+    grid-area: left;
+  }
+  .thr-row .thr-right {
+    grid-area: right;
+  }
+  .thr-row .thr-step {
+    grid-area: step;
+    justify-self: center;
+  }
+}
+
 .switch {
   display: flex;
   align-items: center;

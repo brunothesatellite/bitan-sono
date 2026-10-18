@@ -194,3 +194,44 @@ test("le dosimetre survit a un stockage deffectueux", () => {
   dose.add(5);
   assert.equal(dose.seconds, 5);
 });
+
+test("les seuils configurables deplacent les zones", () => {
+  const t = [50, 62, 78];
+  assert.equal(A.zoneOf(49.9, t), 0);
+  assert.equal(A.zoneOf(50, t), 1);
+  assert.equal(A.zoneOf(61.9, t), 1);
+  assert.equal(A.zoneOf(62, t), 2);
+  assert.equal(A.zoneOf(77.9, t), 2);
+  assert.equal(A.zoneOf(78, t), 3);
+  // Sans seuils, les défauts historiques s'appliquent.
+  assert.equal(A.zoneOf(55), 1);
+  assert.deepEqual(A.DEFAULT_HOME_T, [55, 65, 75]);
+});
+
+test("les zones et les plages suivent les seuils", () => {
+  const t = [50, 62, 78];
+  assert.deepEqual(
+    A.homeZones(t).map((z) => z.to),
+    [50, 62, 78, 90]
+  );
+  // Les couleurs ne bougent pas : seuls les seuils sont configurables.
+  assert.deepEqual(
+    A.homeZones(t).map((z) => z.color),
+    A.HOME_ZONES.map((z) => z.color)
+  );
+  assert.deepEqual(A.wxRanges(t), ["< 50 dB", "50 – 62 dB", "62 – 78 dB", "> 78 dB"]);
+  assert.deepEqual(A.wxRanges(), A.WX_RANGES);
+});
+
+test("l'assainissement des seuils repare sans casser", () => {
+  assert.deepEqual(A.sanitizeHomeT([55, 65, 75]), [55, 65, 75]);
+  assert.deepEqual(A.sanitizeHomeT([70, 60, 50]), [70, 71, 72]);
+  assert.deepEqual(A.sanitizeHomeT([0, 0, 999]), [31, 32, 89]);
+  assert.deepEqual(A.sanitizeHomeT([null, "x", undefined]), [55, 65, 75]);
+  assert.deepEqual(A.sanitizeHomeT([]), [55, 65, 75]);
+  assert.deepEqual(A.sanitizeHomeT("n'importe quoi"), [55, 65, 75]);
+  const once = A.sanitizeHomeT([90, 10, "non"]);
+  assert.deepEqual(A.sanitizeHomeT(once), once);
+  // Le dosimètre garde son seuil : il n'est pas piloté par ces nombres.
+  assert.equal(A.HOME_RED, 75);
+});

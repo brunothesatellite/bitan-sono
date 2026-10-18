@@ -427,6 +427,30 @@ input[type="number"] { width: 78px; text-align: center; font-family: var(--mono)
 .switch:checked { background: var(--accent); border-color: transparent; }
 .switch:checked::after { left: 21px; background: #05231c; }
 
+/* --------------------------------------- seuils des zones (dialogue) */
+#set-zones { display: flex; flex-direction: column; }
+.thr-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px;
+  align-items: center; padding: 9px 0; border-top: 1px solid var(--border); }
+.thr-row:first-child { border-top: 0; }
+.thr-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.thr-side svg { width: 34px; height: 34px; flex: none; }
+.thr-side b { font-size: 13.5px; white-space: nowrap; }
+.thr-right { justify-content: flex-end; text-align: right; }
+.thr-step { display: inline-flex; align-items: center; gap: 4px; }
+.thr-step button { width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text);
+  font-size: 17px; line-height: 1; transition: var(--transition); }
+.thr-step button:hover { background: var(--border); }
+#set-zones .thr-step input { width: 58px; background: transparent; border: 0;
+  color: var(--text); font-size: 16px; font-weight: 700; text-align: center;
+  font-variant-numeric: tabular-nums; outline: none; }
+.zbar { display: flex; height: 30px; border-radius: 9px; overflow: hidden;
+  border: 1px solid var(--border); margin: 2px 0 4px; }
+.zseg { display: flex; align-items: center; justify-content: center;
+  border-left: 1px solid; overflow: hidden; white-space: nowrap; transition: width .25s ease; }
+.zseg:first-child { border-left: 0; }
+.zlab { font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
 /* --------------------------------------------------------------- about */
 .about { align-items: center; text-align: center; }
 .about-mark { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center;

@@ -17,8 +17,50 @@ export const HOME_ZONES = [
   { to: 90, color: "#f87171" },
 ];
 
-export const zoneOf = (v) => (v < 55 ? 0 : v < 65 ? 1 : v < 75 ? 2 : 3);
+export const zoneOf = (v, t = DEFAULT_HOME_T) =>
+  v < t[0] ? 0 : v < t[1] ? 1 : v < t[2] ? 2 : 3;
 export const WX_RANGES = ["< 55 dB", "55 – 65 dB", "65 – 75 dB", "> 75 dB"];
+
+/* Seuils configurables : les mêmes zones, pilotées par 3 nombres. */
+export const DEFAULT_HOME_T = [55, 65, 75];
+
+/**
+ * Assainit 3 seuils : entiers, ordonnés, écart >= 1 dB, dans ]30..90[.
+ * Les valeurs illisibles reprennent les défauts. Idempotent.
+ */
+export function sanitizeHomeT(values) {
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    // null / undefined / "" veulent dire « manquant » (Number(null) vaut 0,
+    // ce qui n'est pas le signal voulu ici).
+    const raw = values ? values[i] : undefined;
+    const num = raw === null || raw === undefined || raw === "" ? NaN : Number(raw);
+    out.push(Number.isFinite(num) ? Math.round(num) : DEFAULT_HOME_T[i]);
+  }
+  let low = HOME_LO + 1;
+  for (let i = 0; i < 3; i++) {
+    out[i] = Math.max(low, Math.min(HOME_HI - 1 - (2 - i), out[i]));
+    low = out[i] + 1;
+  }
+  return out;
+}
+
+/** Les 4 zones pour des seuils donnés (couleurs inchangées). */
+export function homeZones(t = DEFAULT_HOME_T) {
+  const [t1, t2, t3] = sanitizeHomeT(t);
+  return [
+    { to: t1, color: HOME_ZONES[0].color },
+    { to: t2, color: HOME_ZONES[1].color },
+    { to: t3, color: HOME_ZONES[2].color },
+    { to: HOME_HI, color: HOME_ZONES[3].color },
+  ];
+}
+
+/** Les plages affichées pour des seuils donnés. */
+export function wxRanges(t = DEFAULT_HOME_T) {
+  const [t1, t2, t3] = sanitizeHomeT(t);
+  return [`< ${t1} dB`, `${t1} – ${t2} dB`, `${t2} – ${t3} dB`, `> ${t3} dB`];
+}
 
 /** Percentile sur une serie deja triee (`q` en %, 90 -> L10). */
 export function percentileAsc(sorted, q) {

@@ -108,6 +108,9 @@ const I18N = {
     "settings.readfromdevice": "Lire depuis l'appareil",
     "settings.alarms": "Alarmes",
     "settings.sound": "Alerte sonore",
+    "settings.zones": "Zones de la Maison",
+    "settings.zonesHint": "Trois seuils pour quatre météos : le baromètre et la météo suivent les mêmes valeurs.",
+    "settings.resetZones": "Valeurs d'origine",
     "settings.app": "Application",
     "settings.interval": "Intervalle d'échantillonnage (s)",
     "about.title": "À propos",
@@ -225,6 +228,9 @@ const I18N = {
     "settings.readfromdevice": "Read from device",
     "settings.alarms": "Alarms",
     "settings.sound": "Audible alert",
+    "settings.zones": "House zones",
+    "settings.zonesHint": "Three thresholds for four weathers: the barometer and the forecast follow the same values.",
+    "settings.resetZones": "Reset to defaults",
     "settings.app": "Application",
     "settings.interval": "Sampling interval (s)",
     "about.title": "About",
@@ -256,7 +262,8 @@ const t = (key, vars) => {
 const state = {
   settings: { low_alarm: 30, high_alarm: 45, sound_enabled: false, interval: 1,
               language: "fr", theme: "dark", device_mode: "SLOW",
-              device_weighting: "A", device_max_hold: false, device_range: 0 },
+              device_weighting: "A", device_max_hold: false, device_range: 0,
+              home_t1: 55, home_t2: 65, home_t3: 75 },
   connected: false, simulated: false, liveRunning: false, haveMeasurement: false,
   live: [], imported: [], liveStats: {}, importStats: {},
 };
@@ -472,13 +479,47 @@ function renderImportMeta() {
    Maison — family lifestyle dashboard ("météo de la maison")
    ========================================================================== */
 const HOME_LO = 30, HOME_HI = 90, HOME_RED = 75;
-const HOME_ZONES = [
-  { to: 55, color: "#2dd4a7" },
-  { to: 65, color: "#f5b544" },
-  { to: 75, color: "#fb923c" },
-  { to: 90, color: "#f87171" },
-];
-const zoneOf = (v) => (v < 55 ? 0 : v < 65 ? 1 : v < 75 ? 2 : 3);
+const HOME_ZONE_COLORS = ["#2dd4a7", "#f5b544", "#fb923c", "#f87171"];
+const DEFAULT_HOME_T = [55, 65, 75];
+
+/* Seuils courants (baromètre + météo), lus des réglages et assainis. */
+function sanitizeHomeT(values) {
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    // null / undefined / "" veulent dire « manquant » (Number(null) vaut 0,
+    // ce qui n'est pas le signal voulu ici).
+    const raw = values ? values[i] : undefined;
+    const num = raw === null || raw === undefined || raw === "" ? NaN : Number(raw);
+    out.push(Number.isFinite(num) ? Math.round(num) : DEFAULT_HOME_T[i]);
+  }
+  let low = HOME_LO + 1;
+  for (let i = 0; i < 3; i++) {
+    out[i] = Math.max(low, Math.min(HOME_HI - 1 - (2 - i), out[i]));
+    low = out[i] + 1;
+  }
+  return out;
+}
+function homeT() {
+  const s = state.settings || {};
+  return sanitizeHomeT([s.home_t1, s.home_t2, s.home_t3]);
+}
+function homeZones() {
+  const [t1, t2, t3] = homeT();
+  return [
+    { to: t1, color: HOME_ZONE_COLORS[0] },
+    { to: t2, color: HOME_ZONE_COLORS[1] },
+    { to: t3, color: HOME_ZONE_COLORS[2] },
+    { to: HOME_HI, color: HOME_ZONE_COLORS[3] },
+  ];
+}
+const zoneOf = (v) => {
+  const [t1, t2, t3] = homeT();
+  return v < t1 ? 0 : v < t2 ? 1 : v < t3 ? 2 : 3;
+};
+function wxRanges() {
+  const [t1, t2, t3] = homeT();
+  return [`< ${t1} dB`, `${t1} – ${t2} dB`, `${t2} – ${t3} dB`, `> ${t3} dB`];
+}
 
 /* Original pastel SVG weather drawings (64x64), one per barometer zone. */
 const WX_CLOUD = (fill) =>
@@ -506,16 +547,17 @@ const WX_ICONS = [
   `<polygon points="40,42 31,54 36,54 33.5,62 43,50 38,50 41,42" fill="#ffd23f" ` +
   `stroke="#eab308" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
 ];
-const WX_RANGES = ["< 55 dB", "55 – 65 dB", "65 – 75 dB", "> 75 dB"];
+/* (plages affichées : voir wxRanges(), qui suit les seuils configurés) */
 
 function buildWeatherStrip() {
   const strip = el("weather-strip");
   if (!strip) return;
   strip.innerHTML = "";
+  const ranges = wxRanges();
   WX_ICONS.forEach((svg, zone) => {
     strip.insertAdjacentHTML("beforeend",
       `<div class="wx" data-zone="${zone}">${svg}<strong>${t("home.wx" + zone)}</strong>` +
-      `<span>${WX_RANGES[zone]}</span></div>`);
+      `<span>${ranges[zone]}</span></div>`);
   });
 }
 
@@ -550,10 +592,11 @@ function buildHomeGauge() {
   if (!zones) return;
   zones.innerHTML = "";
   let from = HOME_LO;
-  HOME_ZONES.forEach((zone, i) => {
+  const list = homeZones();
+  list.forEach((zone, i) => {
     const [x0, y0] = homePoint((from - HOME_LO) / (HOME_HI - HOME_LO), 90);
     const [x1, y1] = homePoint((zone.to - HOME_LO) / (HOME_HI - HOME_LO), 90);
-    const ends = (i === 0 || i === HOME_ZONES.length - 1) ? " zseg-ends" : "";
+    const ends = (i === 0 || i === list.length - 1) ? " zseg-ends" : "";
     zones.insertAdjacentHTML("beforeend",
       `<path class="zseg${ends}" d="M${x0.toFixed(1)} ${y0.toFixed(1)} ` +
       `A90 90 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${zone.color}" />`);
@@ -569,7 +612,12 @@ function buildHomeGauge() {
       `x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"></line>`);
   }
   // Boundary labels sit exactly on the zone limits (no separate scale row).
-  const labels = [[HOME_LO, 12, 133], [55, 81, 8], [65, 139, 8], [75, 190, 37], [HOME_HI, 208, 133]];
+  // Extrémités décalées vers le bas comme avant ; seuils calculés sur l'arc.
+  const labels = [[HOME_LO, 12, 133], [HOME_HI, 208, 133]];
+  for (const t of homeT()) {
+    const [x, y] = homePoint((t - HOME_LO) / (HOME_HI - HOME_LO), 112);
+    labels.push([t, Math.round(x), Math.round(y)]);
+  }
   for (const [value, x, y] of labels) {
     ticks.insertAdjacentHTML("beforeend",
       `<text class="zlabel" x="${x}" y="${y}">${value}</text>`);
@@ -599,6 +647,7 @@ function renderHome() {
 
   // Mood of the moment, driven by the 1-minute energy average.
   const ref = v60 ?? v1;
+  const HZ = homeZones();
   const moodLabel = el("mood-label"), moodSub = el("mood-sub"), moodDot = el("mood-dot");
   if (ref === null || ref === undefined) {
     moodLabel.textContent = "–";
@@ -608,8 +657,8 @@ function renderHome() {
     const zone = zoneOf(ref);
     moodLabel.textContent = t("home.zone" + zone);
     moodSub.textContent = t("home.moodsub", { v: ref.toFixed(1) });
-    moodDot.style.background = HOME_ZONES[zone].color;
-    moodDot.style.boxShadow = `0 0 0 5px ${HOME_ZONES[zone].color}33`;
+    moodDot.style.background = HZ[zone].color;
+    moodDot.style.boxShadow = `0 0 0 5px ${HZ[zone].color}33`;
   }
 
   // Needle follows the latest value on the 30–90 dB barometer.
@@ -630,7 +679,7 @@ function renderHome() {
     const zone = zoneOf(ref);
     wxIcon.innerHTML = WX_ICONS[zone];
     wxLabel.textContent = t("home.wx" + zone);
-    wxLabel.style.color = HOME_ZONES[zone].color;
+    wxLabel.style.color = HZ[zone].color;
     wxSub.textContent = t("home.moodsub", { v: ref.toFixed(1) });
   }
   document.querySelectorAll("#weather-strip .wx").forEach((node) =>
@@ -768,7 +817,7 @@ function renderCocoon() {
   }
   scoreEl.textContent = c.score;
   const band = c.score >= 80 ? 0 : c.score >= 60 ? 1 : c.score >= 40 ? 2 : 3;
-  scoreEl.style.color = HOME_ZONES[band].color;
+  scoreEl.style.color = HOME_ZONE_COLORS[band];
   label.textContent = t("home.cocoon" + band);
   why.textContent = !c.worst ? "" : t("home.cocoonWhy" + c.worst);
 }
@@ -971,8 +1020,8 @@ function onMeasurement(record, stats, count) {
     dose.add(Math.max(0.2, Number(state.settings.interval) || 1));
   }
 
-  // Nap mode watches for peaks above the orange zone.
-  if (nap.active && Number(record.value) > 65) nap.lastPeak = Date.now();
+  // Nap mode watches for peaks above the orange zone (seuil 2, configurable).
+  if (nap.active && Number(record.value) > homeT()[1]) nap.lastPeak = Date.now();
 
   const value = el("live-value");
   value.classList.remove("placeholder");
@@ -1093,6 +1142,13 @@ function applySettingsToUi() {
   el("set-sound").checked = !!s.sound_enabled;
   el("set-interval").value = s.interval;
   el("set-max").checked = !!s.device_max_hold;
+  const [u1, u2, u3] = sanitizeHomeT([s.home_t1, s.home_t2, s.home_t3]);
+  if (el("set-t1")) {
+    el("set-t1").value = u1;
+    el("set-t2").value = u2;
+    el("set-t3").value = u3;
+    syncZoneInputs();
+  }
   el("set-range").value = String(s.device_range ?? 0);
   const mode = document.querySelector(`#set-mode input[value="${s.device_mode === "FAST" ? "FAST" : "SLOW"}"]`);
   if (mode) mode.checked = true;
@@ -1128,7 +1184,7 @@ function setLanguage(next, persist = true) {
   updateStartButton();
   setStatus(state.connected ? (state.simulated ? "sim" : "online") : "offline");
   renderStats(); renderImportMeta(); buildWeatherStrip(); renderHome();
-  renderTrend(); renderCocoon(); renderNap();
+  renderTrend(); renderCocoon(); renderNap(); buildHomeThresholdRows();
   el("lang-menu").hidden = true;
   if (persist) send({ cmd: "app.settings.set", settings: { language: next } });
 }
@@ -1211,6 +1267,60 @@ function setupSteppers() {
   });
 }
 
+/* ==========================================================================
+   Seuils des zones (dialogue Réglages) — comme la maquette : 3 nombres pour
+   4 météos, ordre imposé par les bornes, aperçu en direct du brouillon.
+   ========================================================================== */
+function buildHomeThresholdRows() {
+  const box = el("set-zones");
+  if (!box) return;
+  const cur = sanitizeHomeT([state.settings.home_t1, state.settings.home_t2, state.settings.home_t3]);
+  box.innerHTML = "";
+  for (let i = 0; i < 3; i++) {
+    box.insertAdjacentHTML("beforeend",
+      `<div class="thr-row">` +
+      `<span class="thr-side">${WX_ICONS[i]}<b>${t("home.wx" + i)}</b></span>` +
+      `<span class="thr-step"><button type="button" data-i="${i}" data-step="-1">−</button>` +
+      `<input type="number" id="set-t${i + 1}" min="31" max="89" step="1" value="${cur[i]}">` +
+      `<button type="button" data-i="${i}" data-step="1">+</button></span>` +
+      `<span class="thr-side thr-right"><b>${t("home.wx" + (i + 1))}</b>${WX_ICONS[i + 1]}</span></div>`);
+  }
+  box.querySelectorAll("button[data-step]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.i);
+      el("set-t" + (i + 1)).value = parseInt(el("set-t" + (i + 1)).value, 10) + Number(btn.dataset.step);
+      syncZoneInputs();
+    });
+  });
+  box.querySelectorAll("input").forEach((input) => {
+    input.addEventListener("change", syncZoneInputs);
+  });
+  syncZoneInputs();
+}
+
+function syncZoneInputs() {
+  const inputs = [el("set-t1"), el("set-t2"), el("set-t3")];
+  if (!inputs[0]) return;
+  const vals = sanitizeHomeT(inputs.map((inp) => parseInt(inp.value, 10)));
+  vals.forEach((v, i) => {
+    inputs[i].value = v;
+    inputs[i].min = i > 0 ? vals[i - 1] + 1 : HOME_LO + 1;
+    inputs[i].max = i < 2 ? vals[i + 1] - 1 : HOME_HI - 1;
+  });
+  const bar = el("set-zones-preview");
+  if (bar) {
+    const b = [HOME_LO, ...vals, HOME_HI];
+    let html = "";
+    for (let z = 0; z < 4; z++) {
+      const w = ((b[z + 1] - b[z]) / (HOME_HI - HOME_LO) * 100).toFixed(2);
+      const label = z === 0 ? `< ${b[1]}` : z === 3 ? `> ${b[3]}` : `${b[z]}–${b[z + 1]}`;
+      html += `<span class="zseg" style="width:${w}%;background:${HOME_ZONE_COLORS[z]}33;` +
+        `border-color:${HOME_ZONE_COLORS[z]}"><span class="zlab">${label}</span></span>`;
+    }
+    bar.innerHTML = html;
+  }
+}
+
 function wire() {
   document.querySelectorAll(".tab").forEach((tab) =>
     tab.addEventListener("click", () => switchView(tab.dataset.view)));
@@ -1264,18 +1374,34 @@ function wire() {
     if (high <= low) { e.preventDefault(); toast(t("toast.rangeInverted"), "error"); return; }
     const mode = document.querySelector("#set-mode input:checked").value;
     const weight = document.querySelector("#set-weight input:checked").value;
+    const [zt1, zt2, zt3] = sanitizeHomeT(
+      [parseInt(el("set-t1").value, 10), parseInt(el("set-t2").value, 10), parseInt(el("set-t3").value, 10)]);
     send({ cmd: "device.write", mode, weighting: weight,
            max_hold: el("set-max").checked, range: parseInt(el("set-range").value, 10) });
     send({ cmd: "app.settings.set", settings: {
       low_alarm: low, high_alarm: high, sound_enabled: el("set-sound").checked,
-      interval: parseFloat(el("set-interval").value) || 1 } });
+      interval: parseFloat(el("set-interval").value) || 1,
+      home_t1: zt1, home_t2: zt2, home_t3: zt3 } });
     state.settings.low_alarm = low;
     state.settings.high_alarm = high;
     state.settings.sound_enabled = el("set-sound").checked;
+    state.settings.home_t1 = zt1;
+    state.settings.home_t2 = zt2;
+    state.settings.home_t3 = zt3;
     renderGauge();
     renderLive();
     renderImport();
+    buildHomeGauge();
+    buildWeatherStrip();
+    renderHome();
     setTimeout(() => { renderGauge(); renderLive(); renderImport(); }, 250);
+  });
+
+  el("btn-reset-zones").addEventListener("click", () => {
+    el("set-t1").value = DEFAULT_HOME_T[0];
+    el("set-t2").value = DEFAULT_HOME_T[1];
+    el("set-t3").value = DEFAULT_HOME_T[2];
+    syncZoneInputs();
   });
 
   el("dlg-settings").addEventListener("close", applySettingsToUi);
@@ -1293,6 +1419,7 @@ function boot() {
   buildGaugeTicks();
   buildHomeGauge();
   buildWeatherStrip();
+  buildHomeThresholdRows();
   wire();
   setupSteppers();
   renderGauge();

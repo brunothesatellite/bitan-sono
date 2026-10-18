@@ -18,6 +18,34 @@ def _config_dir() -> Path:
 CONFIG_FILE = _config_dir() / "settings.json"
 
 
+# Seuils des 4 zones de la Maison (baromètre + météo), en dB.
+# Le dosimètre « zone rouge » garde son propre seuil (75 dB) : c'est un
+# compteur d'exposition, pas une ambiance.
+HOME_LO = 30
+HOME_HI = 90
+DEFAULT_HOME_T = (55, 65, 75)
+
+
+def sanitize_home_thresholds(values) -> list[int]:
+    """Nettoie 3 seuils : entiers, ordonnés, écart >= 1 dB, dans ]30..90[.
+
+    Les valeurs illisibles sont remplacées par les défauts ; l'ordre est
+    imposé en resserrant vers les voisins. Idempotent.
+    """
+    out = []
+    for i, default in enumerate(DEFAULT_HOME_T):
+        try:
+            number = int(round(float(values[i])))
+        except (TypeError, ValueError, IndexError):
+            number = default
+        out.append(number)
+    low = HOME_LO + 1
+    for i in range(3):
+        out[i] = max(low, min(HOME_HI - 1 - (2 - i), out[i]))
+        low = out[i] + 1
+    return out
+
+
 @dataclass
 class AppSettings:
     """User preferences.  Defaults match the shipped ``SoundLevel.exe.config``."""
@@ -34,6 +62,19 @@ class AppSettings:
     device_weighting: str = "A"  # A / C
     device_max_hold: bool = False
     device_range: int = 0
+
+    # seuils des 4 zones de la Maison (baromètre + météo), en dB
+    home_t1: int = 55
+    home_t2: int = 65
+    home_t3: int = 75
+
+    def __post_init__(self) -> None:
+        self.clamp_home_thresholds()
+
+    def clamp_home_thresholds(self) -> None:
+        """Réordonne et borne les seuils (fichier ancien ou requête hostile)."""
+        t1, t2, t3 = sanitize_home_thresholds([self.home_t1, self.home_t2, self.home_t3])
+        self.home_t1, self.home_t2, self.home_t3 = t1, t2, t3
 
     @classmethod
     def load(cls, path: Path | None = None) -> "AppSettings":

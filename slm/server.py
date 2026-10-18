@@ -248,6 +248,8 @@ async def _handle_command(ws: WebSocket, state: State, message: dict) -> None:
         for key, value in (message.get("settings") or {}).items():
             if hasattr(state.settings, key):
                 setattr(state.settings, key, value)
+        # setattr contourne __post_init__ : on répare les seuils ici même.
+        state.settings.clamp_home_thresholds()
         state.settings.save()
         await ws.send_json(
             {"type": "app_settings", "settings": state.settings.to_dict()}
