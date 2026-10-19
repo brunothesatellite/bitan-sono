@@ -16,6 +16,7 @@ import queue
 import threading
 import time
 from dataclasses import asdict
+from datetime import datetime
 from typing import Callable, Protocol
 
 from . import protocol as P
@@ -260,6 +261,13 @@ class DeviceController:
     def _emit_measurement(self, member: P.Measurement) -> None:
         member.low_effect = member.value < self._settings.low_alarm
         member.high_effect = member.value > self._settings.high_alarm
+        if member.source == "live" and not (member.time and member.date):
+            # L'appareil ne date pas ses mesures temps réel (son journal,
+            # lui, est horodaté) : on les horodate à la réception, au même
+            # format. Sans cela, le tableau et les exports restent vides.
+            now = datetime.now()
+            member.date = now.strftime("%Y-%m-%d")
+            member.time = now.strftime("%H:%M:%S")
         self._emit({"type": "measurement", "data": member.to_dict()})
 
     # -- device settings --------------------------------------------------
