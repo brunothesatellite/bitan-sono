@@ -844,7 +844,7 @@ async function disconnectTransport() {
   setStatus("offline");
 }
 
-async function connectTransport() {
+async function connectTransport({ autoStart = false } = {}) {
   await disconnectTransport();
   let kind = settings.transport;
   if (kind === "auto") {
@@ -923,6 +923,12 @@ async function connectTransport() {
   el("demo-card").hidden = !transport.isSimulated;
   if (transport.mode === "stream") {
     await controller.startLive();
+  } else if (autoStart && !transport.isSimulated) {
+    // Appareil réel déjà branché au lancement : on cale l'interface sur son
+    // état, puis l'écoute démarre d'elle-même, comme un appui sur « Démarrer ».
+    await controller.readSettings().catch(() => {});
+    controller.startLive();
+    await acquireWakeLock();
   } else {
     // Premiere lecture : cale l'interface sur l'etat reel de l'appareil et
     // sert de test de sante de la liaison.
@@ -1479,9 +1485,12 @@ function boot() {
 
   if (!window.isSecureContext) el("banner-insecure").hidden = false;
 
-  // Sans API directe (page HTTP, navigateur sans WebUSB), la démo est le seul
-  // moyen de montrer l'interface : on la propose plutôt que d'afficher un vide.
-  if (!detectCapabilities().direct && settings.transport === "auto") {
+  // Repli démo : ni passerelle native, ni API directe (page HTTP, navigateur
+  // sans WebUSB). La démo est alors le seul moyen de montrer l'interface : on
+  // la propose plutôt que d'afficher un vide. Dès qu'une liaison réelle existe,
+  // « Automatique » reste le réglage par défaut et rien n'est imposé.
+  const caps = detectCapabilities();
+  if (settings.transport === "auto" && !caps.direct && !caps.bridge) {
     settings.transport = "sim";
     saveSettings();
     syncControls();
@@ -1494,9 +1503,53 @@ function boot() {
   startRefreshTimer();
   registerServiceWorker();
 
-  if (settings.transport === "sim") {
-    connectTransport();
+  void connectAtBoot();
+}
+
+/* --------------------------------------------------------- démarrage direct */
+
+/** Liaisons derrière lesquelles il y a vraiment un appareil à écouter. */
+const DEVICE_KINDS = ["hid", "usb", "bridge"];
+
+/**
+ * Le sonomètre est-il déjà là ? Question posée sans rien demander à personne.
+ *
+ * La passerelle native interroge la liste USB du téléphone, sans autorisation
+ * ni revendication d'interface. Pour WebHID et WebUSB, `getDevices()` ne rend
+ * que les appareils déjà autorisés lors d'une session passée : l'appel
+ * n'ouvre aucune boîte de dialogue et ne réveille donc pas l'utilisateur.
+ */
+async function sonometerReady(kind) {
+  try {
+    if (kind === "bridge") return (await window.BitanBridge?.present?.()) === true;
+    const known = kind === "hid" ? await navigator.hid?.getDevices?.() : await navigator.usb?.getDevices?.();
+    return Boolean(known?.length);
+  } catch {
+    return false;
   }
+}
+
+/**
+ * Démarrage sans intervention.
+ *
+ * Le réglage par défaut est « Automatique » : rien ne doit être demandé quand
+ * le travail peut se faire tout seul. Appareil déjà branché : on se connecte et
+ * l'écoute part, comme si l'on avait appuyé sur « Démarrer » dans l'onglet
+ * Direct. Appareil absent : on reste hors ligne, sans message d'erreur, et on
+ * attend que l'utilisateur branche l'appareil ou appuie sur « Démarrer ».
+ *
+ * La démo, elle, se branche d'office — il n'y a pas d'appareil à écouter — mais
+ * l'écoute reste au doigt : rien ne doit ressembler à une mesure réelle.
+ */
+async function connectAtBoot() {
+  if (settings.transport === "sim") {
+    await connectTransport();
+    return;
+  }
+  const kind = settings.transport === "auto" ? resolveAutoKind() : settings.transport;
+  if (!DEVICE_KINDS.includes(kind)) return;
+  if (!(await sonometerReady(kind))) return;
+  await connectTransport({ autoStart: true });
 }
 
 /* ------------------------------------------------------------------- tests */

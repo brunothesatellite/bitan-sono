@@ -69,6 +69,18 @@ public class UsbBridge {
 
     /* ------------------------------------------------------------ pont JS */
 
+    /**
+     * Le sonomètre est-il branché ?
+     *
+     * <p>Question posée sans effet de bord : ni demande d'autorisation, ni
+     * revendication d'interface. La page s'en sert au démarrage pour décider
+     * d'ouvrir l'appareil et de partir en écoute d'elle-même.
+     */
+    @JavascriptInterface
+    public boolean present() {
+        return findDevice() != null;
+    }
+
     /** Ouvre l'appareil : autorisation si nécessaire, puis revendication. */
     @JavascriptInterface
     public void open() {

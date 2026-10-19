@@ -7,6 +7,7 @@
    « passerelle native » de la webapp :
 
      window.BitanBridge = {
+       present(): Promise<boolean>,      // le sonomètre est-il déjà branché ?
        open(): Promise<string>,          // libellé de l'appareil
        send(bytes: number[]): void,      // 8 octets utiles
        close(): void,
@@ -55,6 +56,19 @@
   window.BitanBridge = {
     onData: null,
     onError: null,
+
+    /**
+     * Le sonomètre est-il déjà branché ? Java interroge la liste USB du
+     * téléphone, sans autorisation ni revendication d'interface : la question
+     * ne réveille personne.
+     */
+    async present() {
+      try {
+        return native.present() === true;
+      } catch {
+        return false; // passerelle d'une version antérieure : on ne sait pas
+      }
+    },
 
     open() {
       if (pending) return Promise.reject(new Error("ouverture déjà en cours"));

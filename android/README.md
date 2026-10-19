@@ -61,6 +61,7 @@ transport « passerelle native » déjà présent dans `mobile/transports.js` :
 
 ```js
 window.BitanBridge = {
+  present(): Promise<boolean>,    // le sonomètre est-il déjà branché ?
   open(): Promise<string>,        // Java rappelle event('open', libellé)
   send(bytes: number[]): void,
   close(): void,
@@ -70,8 +71,17 @@ window.BitanBridge = {
 ```
 
 Comme `detectCapabilities().bridge` devient vrai, le mode **« Automatique »**
-choisit la passerelle d'office : il n'y a rien à configurer, on appuie sur
-**Connecter**.
+choisit la passerelle d'office : il n'y a rien à configurer. Au lancement,
+l'application demande elle-même à Java si le sonomètre est déjà branché
+(`present()`, qui interroge la liste USB sans autorisation ni revendication) :
+
+- **branché** : elle l'ouvre et part en écoute aussitôt — l'équivalent d'un
+  appui sur **Connecter** puis **Démarrer** ;
+- **absent** : elle reste hors ligne, sans message d'erreur, et attend que
+  l'appareil arrive.
+
+Le repli démo n'est conservé que là où rien de réel n'existe : ni passerelle,
+ni WebHID, ni WebUSB.
 
 La webapp n'est **pas** recopiée dans le dépôt : la tâche Gradle `copyWebapp`
 la reprend de `../mobile` à chaque compilation. Corriger la webapp puis
@@ -157,8 +167,12 @@ adb install -r bitan-sono-<version>.apk
 2. Android propose **bitan·sono** dans la liste des applications (filtre
    `USB_DEVICE_ATTACHED`, VID `0x64BD` / PID `0x74E3`) — ou lancez-la ;
 3. l'application demande l'autorisation d'accéder à l'appareil : acceptez ;
-4. **Réglages → Liaison → Automatique** (c'est le défaut), puis **Connecter** ;
-5. onglet **Direct**, puis **Démarrer**.
+4. c'est tout. **Liaison → Automatique** est le défaut, l'application se
+   connecte et l'écoute démarre d'elle-même (onglet **Direct**).
+
+Lancée sans sonomètre, l'application reste hors ligne sans rien signaler.
+Branchez l'appareil, puis appuyez sur **Démarrer** : « Automatique » se rabat
+sur la passerelle native et l'écoute part.
 
 Le diagnostic doit afficher `Passerelle native détectée : oui` et
 `Liaison utilisée : CH32V10x · USB`.
@@ -183,11 +197,12 @@ cd ../mobile
 node --test tests/bridge.test.mjs
 ```
 
-Sept tests rejouent les appels que Java émettrait — `event('open')`,
+Neuf tests rejouent les appels que Java émettrait — `event('open')`,
 `event('data')`, `event('error')` — et contrôlent que le transport se branche,
 écrit, remonte les rapports et signale les erreurs. Ils vérifient aussi que le
 shim est **idempotent**, parce que la coquille l'injecte deux fois (dans
-l'en-tête de la page, puis à `onPageStarted` en filet de sécurité).
+l'en-tête de la page, puis à `onPageStarted` en filet de sécurité), et que
+`present()` répond sans ouvrir l'appareil.
 
 Ce qui **ne** peut pas être testé ici : le transfert USB réel, qui exige le
 sonomètre et un téléphone.

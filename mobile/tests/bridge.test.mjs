@@ -24,9 +24,13 @@ const SKIP = HAS_SHIM ? false : "coquille Android absente (./android)";
 const SOURCE = HAS_SHIM ? readFileSync(SHIM, "utf8") : "";
 
 /** Installe le shim dans un faux `window`, avec un Java simulé. */
-function installShim() {
+function installShim({ present = true } = {}) {
   const native = {
     calls: [],
+    present() {
+      native.calls.push("present");
+      return present;
+    },
     open() {
       native.calls.push("open");
     },
@@ -56,12 +60,30 @@ test("le shim construit un BitanBridge conforme au contrat attendu", { skip: SKI
   const { win } = installShim();
   const bridge = win.BitanBridge;
   assert.ok(bridge, "window.BitanBridge doit exister");
+  assert.equal(typeof bridge.present, "function", "present() renseigne la présence");
   assert.equal(typeof bridge.open, "function", "open() doit rendre une promesse");
   assert.equal(typeof bridge.send, "function");
   assert.equal(typeof bridge.close, "function");
   assert.ok("onData" in bridge, "la webapp pose onData");
   assert.ok("onError" in bridge, "la webapp pose onError");
   assert.equal(typeof win.__bitanBridge.event, "function", "Java rappelle event()");
+});
+
+test("present() dit si l'appareil est déjà branché, sans rien ouvrir", { skip: SKIP }, async () => {
+  const { win, native } = installShim({ present: true });
+  assert.equal(await win.BitanBridge.present(), true);
+  assert.deepEqual(native.calls, ["present"], "présence et ouverture sont deux choses");
+
+  const absent = installShim({ present: false });
+  assert.equal(await absent.win.BitanBridge.present(), false);
+});
+
+test("une passerelle sans present() ne fait pas échouer la question", { skip: SKIP }, async () => {
+  // Version antérieure de la coquille : la méthode n'existe pas encore.
+  const win = { __bitanNative: { open() {}, send() {}, close() {} } };
+  inject(win);
+  globalThis.window = win;
+  assert.equal(await win.BitanBridge.present(), false, "on ne sait pas : on attend l'utilisateur");
 });
 
 test("le shim est idempotent : la coquille l'injecte deux fois", { skip: SKIP }, () => {

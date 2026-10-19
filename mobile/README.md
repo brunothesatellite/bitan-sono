@@ -41,10 +41,13 @@ python serve.py --port 8123     # autre port
 `localhost` est considéré comme un **contexte sécurisé** par les navigateurs :
 WebHID et WebUSB fonctionnent donc dans Chrome ou Edge de bureau, sans HTTPS.
 
-Ouvrez la page, allez dans **Réglages → Liaison**, choisissez `Automatique`,
-puis **Connecter**. Le panneau **Diagnostic** indique ce que votre navigateur
-autorise. Sans appareil, choisissez **Démo (sans appareil)** : quatre ambiances
-sont proposées et toute l'interface reste utilisable.
+Ouvrez la page : la liaison est **Automatique** par défaut, et le panneau
+**Diagnostic** indique ce que votre navigateur autorise. Si un sonomètre déjà
+autorisé est branché, l'application s'y connecte et démarre l'écoute d'elle-même ;
+sinon elle reste hors ligne sans rien signaler, et vous appuyez sur **Connecter**
+(ou directement sur **Démarrer**) une fois l'appareil en place. Sans appareil du
+tout, choisissez **Démo (sans appareil)** : quatre ambiances sont proposées et
+toute l'interface reste utilisable.
 
 ---
 
